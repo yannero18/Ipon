@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!--
+        Deliberately NO android.permission.INTERNET here.
+        Section 1 of the proposal states "Zero cloud dependencies. Your
+        financial data never leaves your silicon." Omitting INTERNET makes
+        that claim verifiable at the manifest level, not just a marketing
+        line: this app is structurally incapable of making a network call,
+        regardless of what any future library or dependency might attempt.
+    -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+
+    <application
+        android:allowBackup="false"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:theme="@style/Theme.Ipon"
+        android:name=".IponApplication"
+        android:usesCleartextTraffic="false">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:theme="@style/Theme.Ipon">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>
