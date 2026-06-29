@@ -35,6 +35,11 @@ android {
 
     buildFeatures {
         compose = true
+        // Off by default since AGP 8.0 -- explicitly enabled because
+        // SettingsScreen.kt reads BuildConfig.VERSION_NAME / VERSION_CODE
+        // to show the app version. Without this flag, that reference
+        // fails to resolve and the build breaks.
+        buildConfig = true
     }
 
     composeOptions {
@@ -66,6 +71,9 @@ dependencies {
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3:1.2.1")
+    // Icons.Filled.Settings (used in LedgerScreen's settings gear) lives in
+    // the "extended" icon set, not material3 or material-icons-core.
+    implementation("androidx.compose.material:material-icons-extended:1.6.8")
     implementation("androidx.navigation:navigation-compose:2.7.7")
 
     // Room: embedded SQLite engine, per Section 2 of the proposal.

@@ -8,4 +8,16 @@ class Converters {
 
     @TypeConverter
     fun toTransactionType(value: String): TransactionType = TransactionType.valueOf(value)
+
+    @TypeConverter
+    fun fromRecurrenceFrequency(frequency: RecurrenceFrequency): String = frequency.name
+
+    @TypeConverter
+    fun toRecurrenceFrequency(value: String): RecurrenceFrequency = RecurrenceFrequency.valueOf(value)
+
+    @TypeConverter
+    fun fromMoodRating(mood: MoodRating): String = mood.name
+
+    @TypeConverter
+    fun toMoodRating(value: String): MoodRating = MoodRating.valueOf(value)
 }

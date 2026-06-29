@@ -28,6 +28,7 @@ fun BalanceCard(
     availableThisMonth: Money,
     income: Money,
     expense: Money,
+    estimatedDaysOfRunway: Int? = null,
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -65,6 +66,23 @@ fun BalanceCard(
             ) {
                 BalanceSubItem(label = "In", amount = income, valueColor = Color(0xFFB8E3CC))
                 BalanceSubItem(label = "Out", amount = expense, valueColor = Color(0xFFF4C5B8))
+            }
+
+            // Framed as a pace-based estimate, not a hard prediction --
+            // "at this rate" rather than "you will run out," since this is
+            // an honest extrapolation of recent spending, not a forecast
+            // the app can guarantee.
+            estimatedDaysOfRunway?.let { days ->
+                Text(
+                    text = when {
+                        days <= 0 -> "At this pace, your balance is already spent"
+                        days == 1 -> "At this pace, about 1 day of balance left"
+                        else -> "At this pace, about $days days of balance left"
+                    },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = RicePaper.copy(alpha = 0.7f),
+                    modifier = Modifier.padding(top = 14.dp)
+                )
             }
         }
     }

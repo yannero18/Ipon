@@ -2,7 +2,6 @@ package com.ipon.app.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
@@ -36,10 +35,7 @@ fun TransactionCoinFab(
             .shadow(elevation = 14.dp, shape = IponShapes.FabCircle, ambientColor = JeepneyOrange)
             .clip(IponShapes.FabCircle)
             .background(JeepneyOrange)
-            .clickable(
-                interactionSource = MutableInteractionSource(),
-                onClick = onClick
-            ),
+            .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
         Text(

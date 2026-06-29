@@ -9,11 +9,15 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -24,7 +28,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -33,27 +39,51 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ipon.app.data.local.TransactionType
-import com.ipon.app.data.model.Category
+import com.ipon.app.data.model.ExpenseCategory
+import com.ipon.app.data.model.IncomeCategory
+import com.ipon.app.data.model.TransactionCategory
 import com.ipon.app.di.IponViewModelFactory
+import com.ipon.app.ui.icons.icon
 import com.ipon.app.ui.theme.IponShapes
 import com.ipon.app.ui.theme.JeepneyOrange
 import com.ipon.app.ui.theme.KapeBrown
 import com.ipon.app.ui.theme.KapeBrownSoft
 import com.ipon.app.ui.theme.OceanTeal
 import com.ipon.app.ui.theme.RicePaper
+import com.ipon.app.ui.theme.Terracotta
 import com.ipon.app.util.HapticCurrencyFeedback
 import com.ipon.app.util.Money
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddTransactionScreen(
     viewModelFactory: IponViewModelFactory,
     onSaved: (transactionId: String) -> Unit,
-    onCancel: () -> Unit
+    onCancel: () -> Unit,
+    onDeleted: () -> Unit = onCancel,
+    transactionIdToEdit: String? = null
 ) {
     val viewModel: AddTransactionViewModel = viewModel(factory = viewModelFactory)
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
     val haptics = remember(context) { HapticCurrencyFeedback(context) }
+    var showDeleteConfirm by remember { mutableStateOf(false) }
+
+    // Loads the existing transaction into the form exactly once, the first
+    // time this screen composes with a non-null transactionIdToEdit -- not
+    // re-run on every recomposition, since the user's in-progress edits
+    // would otherwise keep getting clobbered by the original data.
+    LaunchedEffect(transactionIdToEdit) {
+        if (transactionIdToEdit != null) {
+            viewModel.loadTransactionForEditing(transactionIdToEdit)
+        }
+    }
+
+    LaunchedEffect(uiState.deleted) {
+        if (uiState.deleted) {
+            onDeleted()
+        }
+    }
 
     LaunchedEffect(uiState.savedTransactionId) {
         uiState.savedTransactionId?.let { id ->
@@ -68,9 +98,21 @@ fun AddTransactionScreen(
         containerColor = RicePaper,
         topBar = {
             TopAppBar(
-                title = { Text("New entry", style = MaterialTheme.typography.titleMedium) },
+                title = {
+                    Text(
+                        if (uiState.isEditing) "Edit entry" else "New entry",
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                },
                 navigationIcon = {
                     TextButton(onClick = onCancel) { Text("Cancel", color = KapeBrownSoft) }
+                },
+                actions = {
+                    if (uiState.isEditing) {
+                        TextButton(onClick = { showDeleteConfirm = true }) {
+                            Text("Delete", color = Terracotta)
+                        }
+                    }
                 }
             )
         }
@@ -124,12 +166,27 @@ fun AddTransactionScreen(
             )
 
             uiState.suggestedCategory?.let { suggestion ->
-                Text(
-                    text = "Suggested: ${suggestion.emoji} ${suggestion.displayName}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = OceanTeal,
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.padding(top = 6.dp, start = 4.dp)
-                )
+                ) {
+                    Icon(
+                        imageVector = suggestion.icon(),
+                        contentDescription = null,
+                        tint = OceanTeal,
+                        modifier = Modifier.size(14.dp)
+                    )
+                    Text(
+                        text = if (uiState.suggestionIsFromMemory) {
+                            "You usually pick ${suggestion.displayName} for this"
+                        } else {
+                            "Suggested: ${suggestion.displayName}"
+                        },
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = OceanTeal,
+                        modifier = Modifier.padding(start = 6.dp)
+                    )
+                }
             }
 
             Text(
@@ -138,8 +195,12 @@ fun AddTransactionScreen(
                 color = KapeBrownSoft,
                 modifier = Modifier.padding(top = 18.dp, bottom = 8.dp)
             )
+            val availableCategories: List<TransactionCategory> = when (uiState.type) {
+                TransactionType.EXPENSE -> ExpenseCategory.entries.toList()
+                TransactionType.INCOME -> IncomeCategory.entries.toList()
+            }
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(Category.entries.toList()) { category ->
+                items(availableCategories) { category ->
                     CategoryChip(
                         category = category,
                         selected = uiState.selectedCategory == category,
@@ -165,9 +226,30 @@ fun AddTransactionScreen(
                     .fillMaxWidth()
                     .padding(top = 24.dp)
             ) {
-                Text("Save entry", color = RicePaper)
+                Text(if (uiState.isEditing) "Save changes" else "Save entry", color = RicePaper)
             }
         }
+    }
+
+    if (showDeleteConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirm = false },
+            title = { Text("Delete this entry?") },
+            text = { Text("This removes it from your ledger permanently. This cannot be undone.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showDeleteConfirm = false
+                    viewModel.delete()
+                }) {
+                    Text("Delete", color = Terracotta)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirm = false }) {
+                    Text("Cancel", color = KapeBrownSoft)
+                }
+            }
+        )
     }
 }
 
@@ -196,7 +278,7 @@ private fun TypeToggleOption(
 
 @Composable
 private fun CategoryChip(
-    category: Category,
+    category: TransactionCategory,
     selected: Boolean,
     onClick: () -> Unit
 ) {
@@ -208,7 +290,14 @@ private fun CategoryChip(
             .padding(horizontal = 14.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(text = category.emoji, modifier = Modifier.padding(end = 6.dp))
+        Icon(
+            imageVector = category.icon(),
+            contentDescription = null,
+            tint = if (selected) RicePaper else KapeBrown,
+            modifier = Modifier
+                .size(16.dp)
+                .padding(end = 6.dp)
+        )
         Text(
             text = category.displayName,
             color = if (selected) RicePaper else KapeBrown,

@@ -8,6 +8,15 @@
         that claim verifiable at the manifest level, not just a marketing
         line: this app is structurally incapable of making a network call,
         regardless of what any future library or dependency might attempt.
+
+        Also deliberately NO storage/WRITE_EXTERNAL_STORAGE permission.
+        ExportRepository writes CSV exports via MediaStore.Downloads
+        (ContentResolver), which works on API 29+ under scoped storage with
+        zero permissions. If export is ever ported to support pre-29
+        devices, that would require a runtime storage permission this app
+        has otherwise never needed, a real tradeoff to weigh deliberately,
+        not something to add without noticing it breaks the
+        "VIBRATE-only" permission story in Settings.
     -->
     <uses-permission android:name="android.permission.VIBRATE" />
 

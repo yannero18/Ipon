@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -23,6 +24,7 @@ import com.ipon.app.di.IponViewModelFactory
 import com.ipon.app.ui.components.BalanceCard
 import com.ipon.app.ui.components.TransactionCoinFab
 import com.ipon.app.ui.components.TransactionRow
+import com.ipon.app.ui.screens.reflection.DailyReflectionCard
 import com.ipon.app.ui.theme.KapeBrownSoft
 import com.ipon.app.ui.theme.OceanTeal
 import com.ipon.app.ui.theme.RicePaper
@@ -34,6 +36,7 @@ import java.util.Locale
 fun LedgerScreen(
     viewModelFactory: IponViewModelFactory,
     onAddTransactionClick: () -> Unit,
+    onTransactionClick: (transactionId: String) -> Unit,
     recentlyAddedId: String? = null
 ) {
     val viewModel: LedgerViewModel = viewModel(factory = viewModelFactory)
@@ -70,6 +73,14 @@ fun LedgerScreen(
                     availableThisMonth = uiState.summary.net,
                     income = uiState.summary.income,
                     expense = uiState.summary.expense,
+                    estimatedDaysOfRunway = uiState.estimatedDaysOfRunway,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+            }
+
+            item {
+                DailyReflectionCard(
+                    viewModelFactory = viewModelFactory,
                     modifier = Modifier.padding(bottom = 20.dp)
                 )
             }
@@ -120,6 +131,7 @@ fun LedgerScreen(
                     TransactionRow(
                         transaction = transaction,
                         isNewlyAdded = transaction.id == recentlyAddedId,
+                        onClick = { onTransactionClick(transaction.id) },
                         modifier = Modifier.padding(bottom = 8.dp)
                     )
                 }

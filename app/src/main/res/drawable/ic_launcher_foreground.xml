@@ -4,11 +4,38 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Simple coin glyph, echoing the "transaction coin FAB" concept from Section 4/5. -->
+    <!--
+        An alkansya (coin jar) silhouette, replacing the earlier placeholder
+        coin glyph. This echoes the brand's own framing from the proposal's
+        Section 5: "settles, like a coin dropped into a jar." The jar body
+        is a rounded-square squircle (matching IponShapes), with a coin slot
+        and a single coin mid-drop to suggest motion without animation.
+    -->
+    <!-- Jar body -->
     <path
         android:fillColor="#F9F6F0"
-        android:pathData="M54,30 C68,30 78,40 78,54 C78,68 68,78 54,78 C40,78 30,68 30,54 C30,40 40,30 54,30 Z M54,38 C44.6,38 38,44.6 38,54 C38,63.4 44.6,70 54,70 C63.4,70 70,63.4 70,54 C70,44.6 63.4,38 54,38 Z" />
+        android:pathData="M40,46
+            C40,42 43,39 47,39
+            L61,39
+            C65,39 68,42 68,46
+            L70,82
+            C70,88 65,93 59,93
+            L49,93
+            C43,93 38,88 38,82
+            Z" />
+    <!-- Jar lid -->
     <path
         android:fillColor="#F9F6F0"
-        android:pathData="M50,46 h8 v4 h-8 z M50,58 h8 v4 h-8 z M48,50 h12 v3 h-12 z M48,55 h12 v3 h-12 z" />
+        android:pathData="M36,39 L72,39 C73.5,39 74,40 73.5,41.3 L71.5,46 C71,47 70,47.5 69,47.5 L39,47.5 C38,47.5 37,47 36.5,46 L34.5,41.3 C34,40 34.5,39 36,39 Z" />
+    <!-- Coin slot -->
+    <path
+        android:fillColor="#F28C38"
+        android:pathData="M50,41.5 h8 v3 h-8 z" />
+    <!-- Falling coin -->
+    <path
+        android:fillColor="#F28C38"
+        android:pathData="M54,20 m-7,0 a7,7 0 1,0 14,0 a7,7 0 1,0 -14,0" />
+    <path
+        android:fillColor="#F9F6F0"
+        android:pathData="M51,17 h6 v2 h-6 z M51,21 h6 v2 h-6 z M50,19 h2 v2 h-2 z M56,19 h2 v2 h-2 z" />
 </vector>
