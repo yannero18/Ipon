@@ -39,6 +39,7 @@ fun BalanceCard(
             style = MaterialTheme.typography.labelSmall,
             color = RicePaper.copy(alpha = 0.7f)
         )
+
         Text(
             text = availableThisMonth.formatPhp(),
             style = MaterialTheme.typography.headlineMedium.merge(TabularNumberStyle),
@@ -54,10 +55,6 @@ fun BalanceCard(
             BalanceSubItem(label = "Out", amount = expense, valueColor = Color(0xFFF4C5B8))
         }
 
-        // Framed as a pace-based estimate, not a hard prediction --
-        // "at this rate" rather than "you will run out," since this is
-        // an honest extrapolation of recent spending, not a forecast
-        // the app can guarantee.
         estimatedDaysOfRunway?.let { days ->
             Text(
                 text = when {
