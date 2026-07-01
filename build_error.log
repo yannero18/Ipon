@@ -1,83 +1,55 @@
-Starting a Gradle Daemon, 1 stopped Daemon could not be reused, use --status for details
+> Task :app:clean
 > Task :app:preBuild UP-TO-DATE
 > Task :app:preDebugBuild UP-TO-DATE
 > Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
 > Task :app:checkKotlinGradlePluginConfigurationErrors
-> Task :app:generateDebugBuildConfig UP-TO-DATE
-> Task :app:checkDebugAarMetadata UP-TO-DATE
-> Task :app:generateDebugResValues UP-TO-DATE
-> Task :app:mapDebugSourceSetPaths UP-TO-DATE
-> Task :app:generateDebugResources UP-TO-DATE
-> Task :app:mergeDebugResources UP-TO-DATE
-> Task :app:packageDebugResources UP-TO-DATE
-> Task :app:parseDebugLocalResources UP-TO-DATE
-> Task :app:createDebugCompatibleScreenManifests UP-TO-DATE
-> Task :app:extractDeepLinksDebug UP-TO-DATE
-> Task :app:processDebugMainManifest UP-TO-DATE
-> Task :app:processDebugManifest UP-TO-DATE
-> Task :app:processDebugManifestForPackage UP-TO-DATE
-> Task :app:processDebugResources UP-TO-DATE
-> Task :app:javaPreCompileDebug UP-TO-DATE
-> Task :app:preDebugUnitTestBuild UP-TO-DATE
-> Task :app:javaPreCompileDebugUnitTest
-> Task :app:preReleaseBuild UP-TO-DATE
-> Task :app:generateReleaseBuildConfig
-> Task :app:checkReleaseAarMetadata
-> Task :app:generateReleaseResValues
-> Task :app:mapReleaseSourceSetPaths
-> Task :app:generateReleaseResources
-> Task :app:mergeReleaseResources
-> Task :app:packageReleaseResources
-> Task :app:parseReleaseLocalResources
-> Task :app:createReleaseCompatibleScreenManifests
-> Task :app:extractDeepLinksRelease
-> Task :app:processReleaseMainManifest
-> Task :app:processReleaseManifest
-> Task :app:processReleaseManifestForPackage
-> Task :app:processReleaseResources
-> Task :app:kspDebugKotlin
-> Task :app:kspReleaseKotlin
+> Task :app:generateDebugBuildConfig
+> Task :app:generateDebugResValues
+> Task :app:mapDebugSourceSetPaths
+> Task :app:generateDebugResources
+> Task :app:checkDebugAarMetadata
+> Task :app:packageDebugResources
+> Task :app:mergeDebugResources
+> Task :app:createDebugCompatibleScreenManifests
+> Task :app:extractDeepLinksDebug
+> Task :app:parseDebugLocalResources
+> Task :app:processDebugMainManifest
+> Task :app:processDebugManifest
+> Task :app:processDebugManifestForPackage
+> Task :app:javaPreCompileDebug
+> Task :app:mergeDebugShaders
+> Task :app:compileDebugShaders NO-SOURCE
+> Task :app:generateDebugAssets UP-TO-DATE
+> Task :app:mergeDebugAssets
+> Task :app:compressDebugAssets
+> Task :app:checkDebugDuplicateClasses
+> Task :app:desugarDebugFileDependencies
+> Task :app:mergeDebugStartupProfile UP-TO-DATE
+> Task :app:processDebugResources
+> Task :app:mergeExtDexDebug
+> Task :app:mergeLibDexDebug
+> Task :app:mergeDebugJniLibFolders
+> Task :app:mergeDebugNativeLibs NO-SOURCE
+> Task :app:stripDebugDebugSymbols NO-SOURCE
+> Task :app:validateSigningDebug
+> Task :app:writeDebugAppMetadata
+> Task :app:writeDebugSigningConfigVersions
 
-> Task :app:compileDebugKotlin
-e: file:///workspaces/Ipon/app/src/main/java/com/ipon/app/ui/screens/onboarding/OnboardingScreen.kt:70:22 This foundation API is experimental and is likely to change or be removed in the future.
-e: file:///workspaces/Ipon/app/src/main/java/com/ipon/app/ui/screens/onboarding/OnboardingScreen.kt:72:22 This foundation API is experimental and is likely to change or be removed in the future.
-e: file:///workspaces/Ipon/app/src/main/java/com/ipon/app/ui/screens/onboarding/OnboardingScreen.kt:72:33 This foundation API is experimental and is likely to change or be removed in the future.
-e: file:///workspaces/Ipon/app/src/main/java/com/ipon/app/ui/screens/onboarding/OnboardingScreen.kt:91:13 This foundation API is experimental and is likely to change or be removed in the future.
-e: file:///workspaces/Ipon/app/src/main/java/com/ipon/app/ui/screens/onboarding/OnboardingScreen.kt:92:25 This foundation API is experimental and is likely to change or be removed in the future.
-e: file:///workspaces/Ipon/app/src/main/java/com/ipon/app/ui/screens/onboarding/OnboardingScreen.kt:110:48 This foundation API is experimental and is likely to change or be removed in the future.
-e: file:///workspaces/Ipon/app/src/main/java/com/ipon/app/ui/screens/onboarding/OnboardingScreen.kt:110:59 This foundation API is experimental and is likely to change or be removed in the future.
-e: file:///workspaces/Ipon/app/src/main/java/com/ipon/app/ui/screens/onboarding/OnboardingScreen.kt:112:54 This foundation API is experimental and is likely to change or be removed in the future.
-e: file:///workspaces/Ipon/app/src/main/java/com/ipon/app/ui/screens/onboarding/OnboardingScreen.kt:112:65 This foundation API is experimental and is likely to change or be removed in the future.
-e: file:///workspaces/Ipon/app/src/main/java/com/ipon/app/ui/screens/onboarding/OnboardingScreen.kt:122:40 This foundation API is experimental and is likely to change or be removed in the future.
-e: file:///workspaces/Ipon/app/src/main/java/com/ipon/app/ui/screens/onboarding/OnboardingScreen.kt:122:51 This foundation API is experimental and is likely to change or be removed in the future.
-e: file:///workspaces/Ipon/app/src/main/java/com/ipon/app/ui/screens/onboarding/OnboardingScreen.kt:122:71 This foundation API is experimental and is likely to change or be removed in the future.
-e: file:///workspaces/Ipon/app/src/main/java/com/ipon/app/ui/screens/onboarding/OnboardingScreen.kt:122:82 This foundation API is experimental and is likely to change or be removed in the future.
+> Task :app:kspDebugKotlin FAILED
+e: file:///workspaces/Ipon/app/src/main/java/com/ipon/app/ui/components/BalanceCard.kt:43:1 Expecting an element
+e: file:///workspaces/Ipon/app/src/main/java/com/ipon/app/ui/components/BalanceCard.kt:43:2 Unexpected tokens (use ';' to separate expressions on the same line)
+e: file:///workspaces/Ipon/app/src/main/java/com/ipon/app/ui/components/BalanceCard.kt:51:4 Expecting an element
+e: file:///workspaces/Ipon/app/src/main/java/com/ipon/app/ui/components/BalanceCard.kt:56:2 Expecting an element
+e: file:///workspaces/Ipon/app/src/main/java/com/ipon/app/ui/components/BalanceCard.kt:56:4 Expecting an element
+e: file:///workspaces/Ipon/app/src/main/java/com/ipon/app/ui/components/BalanceCard.kt:56:6 Expecting an element
+e: file:///workspaces/Ipon/app/src/main/java/com/ipon/app/ui/components/BalanceCard.kt:60:50 Expecting ')'
 
-> Task :app:compileDebugKotlin FAILED
 > Task :app:copyRoomSchemas NO-SOURCE
-> Task :app:compileReleaseKotlin
-e: file:///workspaces/Ipon/app/src/main/java/com/ipon/app/ui/screens/onboarding/OnboardingScreen.kt:70:22 This foundation API is experimental and is likely to change or be removed in the future.
-e: file:///workspaces/Ipon/app/src/main/java/com/ipon/app/ui/screens/onboarding/OnboardingScreen.kt:72:22 This foundation API is experimental and is likely to change or be removed in the future.
-e: file:///workspaces/Ipon/app/src/main/java/com/ipon/app/ui/screens/onboarding/OnboardingScreen.kt:72:33 This foundation API is experimental and is likely to change or be removed in the future.
-e: file:///workspaces/Ipon/app/src/main/java/com/ipon/app/ui/screens/onboarding/OnboardingScreen.kt:91:13 This foundation API is experimental and is likely to change or be removed in the future.
-e: file:///workspaces/Ipon/app/src/main/java/com/ipon/app/ui/screens/onboarding/OnboardingScreen.kt:92:25 This foundation API is experimental and is likely to change or be removed in the future.
-e: file:///workspaces/Ipon/app/src/main/java/com/ipon/app/ui/screens/onboarding/OnboardingScreen.kt:110:48 This foundation API is experimental and is likely to change or be removed in the future.
-e: file:///workspaces/Ipon/app/src/main/java/com/ipon/app/ui/screens/onboarding/OnboardingScreen.kt:110:59 This foundation API is experimental and is likely to change or be removed in the future.
-e: file:///workspaces/Ipon/app/src/main/java/com/ipon/app/ui/screens/onboarding/OnboardingScreen.kt:112:54 This foundation API is experimental and is likely to change or be removed in the future.
-e: file:///workspaces/Ipon/app/src/main/java/com/ipon/app/ui/screens/onboarding/OnboardingScreen.kt:112:65 This foundation API is experimental and is likely to change or be removed in the future.
-e: file:///workspaces/Ipon/app/src/main/java/com/ipon/app/ui/screens/onboarding/OnboardingScreen.kt:122:40 This foundation API is experimental and is likely to change or be removed in the future.
-e: file:///workspaces/Ipon/app/src/main/java/com/ipon/app/ui/screens/onboarding/OnboardingScreen.kt:122:51 This foundation API is experimental and is likely to change or be removed in the future.
-e: file:///workspaces/Ipon/app/src/main/java/com/ipon/app/ui/screens/onboarding/OnboardingScreen.kt:122:71 This foundation API is experimental and is likely to change or be removed in the future.
-e: file:///workspaces/Ipon/app/src/main/java/com/ipon/app/ui/screens/onboarding/OnboardingScreen.kt:122:82 This foundation API is experimental and is likely to change or be removed in the future.
 
-> Task :app:compileReleaseKotlin FAILED
+FAILURE: Build failed with an exception.
 
-FAILURE: Build completed with 2 failures.
-
-1: Task failed with an exception.
------------
 * What went wrong:
-Execution failed for task ':app:compileDebugKotlin'.
+Execution failed for task ':app:kspDebugKotlin'.
 > A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
    > Compilation error. See log for more details
 
@@ -86,21 +58,6 @@ Execution failed for task ':app:compileDebugKotlin'.
 > Run with --info or --debug option to get more log output.
 > Run with --scan to get full insights.
 > Get more help at https://help.gradle.org.
-==============================================================================
 
-2: Task failed with an exception.
------------
-* What went wrong:
-Execution failed for task ':app:compileReleaseKotlin'.
-> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
-   > Compilation error. See log for more details
-
-* Try:
-> Run with --stacktrace option to get the stack trace.
-> Run with --info or --debug option to get more log output.
-> Run with --scan to get full insights.
-> Get more help at https://help.gradle.org.
-==============================================================================
-
-BUILD FAILED in 1m 16s
-35 actionable tasks: 20 executed, 15 up-to-date
+BUILD FAILED in 35s
+30 actionable tasks: 29 executed, 1 up-to-date
