@@ -12,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.coerceAtLeast
 import androidx.compose.ui.unit.dp
 import com.ipon.app.ui.theme.IponShapes
 import com.ipon.app.ui.theme.OceanTeal
@@ -27,12 +28,16 @@ fun BalanceCard(
     estimatedDaysOfRunway: Int? = null,
     modifier: Modifier = Modifier
 ) {
+    // Ensure all padding values are safe and positive
+    val safePaddingH = 24.dp.coerceAtLeast(0.dp)
+    val safePaddingV = 24.dp.coerceAtLeast(0.dp)
+    
     Column(
         modifier = modifier
             .fillMaxWidth()
             .clip(IponShapes.SquircleLg)
             .background(OceanTeal)
-            .padding(horizontal = 24.dp, vertical = 24.dp)
+            .padding(horizontal = safePaddingH, vertical = safePaddingV)
     ) {
         Text(
             text = "AVAILABLE THIS MONTH",
@@ -44,30 +49,29 @@ fun BalanceCard(
             text = availableThisMonth.formatPhp(),
             style = MaterialTheme.typography.headlineMedium.merge(TabularNumberStyle),
             color = RicePaper,
-            modifier = Modifier.padding(top = 6.dp)
+            modifier = Modifier.padding(top = 6.dp.coerceAtLeast(0.dp))
         )
 
         Row(
-            modifier = Modifier.padding(top = 16.dp),
+            modifier = Modifier.padding(top = 16.dp.coerceAtLeast(0.dp)),
             horizontalArrangement = Arrangement.spacedBy(18.dp)
         ) {
             BalanceSubItem(label = "In", amount = income, valueColor = Color(0xFFB8E3CC))
             BalanceSubItem(label = "Out", amount = expense, valueColor = Color(0xFFF4C5B8))
         }
 
-        estimatedDaysOfRunway?.let { days ->
-            if (days >= 0) {
-                Text(
-                    text = when (days) {
-                        0 -> "At this pace, your balance is already spent"
-                        1 -> "At this pace, about 1 day of balance left"
-                        else -> "At this pace, about $days days of balance left"
-                    },
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = RicePaper.copy(alpha = 0.7f),
-                    modifier = Modifier.padding(top = 14.dp)
-                )
-            }
+        // Only render if days is valid and non-negative
+        if (estimatedDaysOfRunway != null && estimatedDaysOfRunway >= 0) {
+            Text(
+                text = when (estimatedDaysOfRunway) {
+                    0 -> "At this pace, your balance is already spent"
+                    1 -> "At this pace, about 1 day of balance left"
+                    else -> "At this pace, about $estimatedDaysOfRunway days of balance left"
+                },
+                style = MaterialTheme.typography.bodyMedium,
+                color = RicePaper.copy(alpha = 0.7f),
+                modifier = Modifier.padding(top = 14.dp.coerceAtLeast(0.dp))
+            )
         }
     }
 }
