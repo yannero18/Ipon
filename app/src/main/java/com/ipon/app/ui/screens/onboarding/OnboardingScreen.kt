@@ -26,9 +26,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ipon.app.ui.theme.IponShapes
+import com.ipon.app.ui.theme.IponTheme
 import com.ipon.app.ui.theme.JeepneyOrange
 import com.ipon.app.ui.theme.KapeBrown
 import com.ipon.app.ui.theme.KapeBrownSoft
@@ -134,6 +136,14 @@ fun OnboardingScreen(onFinished: () -> Unit) {
                 Text(if (isLastPage) "Start logging" else "Next", color = RicePaper)
             }
         }
+    }
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFFF8F2E8)
+@Composable
+fun OnboardingScreenPreview() {
+    IponTheme {
+        OnboardingScreen(onFinished = {})
     }
 }
 
