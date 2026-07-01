@@ -12,7 +12,7 @@
 
 You can download the latest version of Ipon directly to your Android device:
 
-[![Download APK](https://img.shields.io/badge/Download-Latest_APK-%231D5D6B?style=for-the-badge&logo=android)](https://github.com/YOUR_USERNAME/Ipon/releases/latest)
+[![Download APK](https://img.shields.io/badge/Download-Latest_APK-%231D5D6B?style=for-the-badge&logo=android)](https://github.com/yannero18/Ipon/releases/tag/v0.1.0-alpha)
 
 *(Note: You may need to enable "Install from unknown sources" in your Android settings to install the APK directly.)*
 
