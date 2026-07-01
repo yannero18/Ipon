@@ -2,8 +2,7 @@ package com.ipon.app.ui.screens.ledger
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -51,8 +50,8 @@ fun LedgerScreen(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(scaffoldPadding),
-            contentPadding = PaddingValues(horizontal = 24.dp, vertical = 16.dp),
+                .padding(scaffoldPadding)
+                .padding(horizontal = 24.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             item {
@@ -86,9 +85,8 @@ fun LedgerScreen(
             }
 
             item {
-                Row(
-                    modifier = Modifier.padding(bottom = 10.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                Column(
+                    modifier = Modifier.padding(bottom = 10.dp)
                 ) {
                     Text(
                         text = "Recent activity",
