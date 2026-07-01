@@ -32,7 +32,7 @@ fun BalanceCard(
             .fillMaxWidth()
             .clip(IponShapes.SquircleLg)
             .background(OceanTeal)
-            .padding(24.dp)
+            .padding(horizontal = 24.dp, vertical = 24.dp)
     ) {
         Text(
             text = "AVAILABLE THIS MONTH",
@@ -56,16 +56,18 @@ fun BalanceCard(
         }
 
         estimatedDaysOfRunway?.let { days ->
-            Text(
-                text = when {
-                    days <= 0 -> "At this pace, your balance is already spent"
-                    days == 1 -> "At this pace, about 1 day of balance left"
-                    else -> "At this pace, about $days days of balance left"
-                },
-                style = MaterialTheme.typography.bodyMedium,
-                color = RicePaper.copy(alpha = 0.7f),
-                modifier = Modifier.padding(top = 14.dp)
-            )
+            if (days >= 0) {
+                Text(
+                    text = when (days) {
+                        0 -> "At this pace, your balance is already spent"
+                        1 -> "At this pace, about 1 day of balance left"
+                        else -> "At this pace, about $days days of balance left"
+                    },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = RicePaper.copy(alpha = 0.7f),
+                    modifier = Modifier.padding(top = 14.dp)
+                )
+            }
         }
     }
 }
