@@ -40,20 +40,10 @@ fun BalanceCard(
             .background(OceanTeal)
             .padding(horizontal = safePaddingH, vertical = safePaddingV)
     ) {
-<<<<<<< HEAD
-        // Decorative organic blob, echoing the squircle motif at large scale.
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .offset(x = 40.dp, y = (-40).dp)
-                .clip(IponShapes.SquircleLg)
-                .background(OceanTealLight.copy(alpha = 0.35f))
-=======
         Text(
             text = "AVAILABLE THIS MONTH",
             style = MaterialTheme.typography.labelSmall,
             color = RicePaper.copy(alpha = 0.7f)
->>>>>>> b7c5946b83af4c6274c183da1696202e902eecb5
         )
 
         Text(
