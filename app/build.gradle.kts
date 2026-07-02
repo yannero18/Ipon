@@ -14,7 +14,14 @@ android {
         minSdk = 26 // VibrationEffect (Section 5 haptics) requires API 26+.
         targetSdk = 34
         versionCode = 1
-        versionName = "0.1.0-prototype"
+        versionName = "1.0.0a"
+    }
+
+    applicationVariants.all {
+        outputs.all {
+            val output = this as com.android.build.gradle.internal.api.BaseVariantOutputImpl
+            output.outputFileName = "ipon.apk"
+        }
     }
 
     buildTypes {
