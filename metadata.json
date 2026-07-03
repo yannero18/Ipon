@@ -1,0 +1,6 @@
+{
+  "name": "Ipon",
+  "description": "An offline personal savings and piggy bank tracker app styled with a modern dashboard, envelope budgeting, and haptic feedback.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
