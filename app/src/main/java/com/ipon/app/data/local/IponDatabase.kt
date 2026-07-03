@@ -22,7 +22,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         ReportEntity::class
     ],
     version = 11,
-    exportSchema = true
+    exportSchema = false
 )
 @TypeConverters(Converters::class)
 abstract class IponDatabase : RoomDatabase() {

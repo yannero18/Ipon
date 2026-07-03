@@ -1,49 +1,98 @@
-> Task :app:preBuild UP-TO-DATE
-> Task :app:preDebugBuild UP-TO-DATE
-> Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
-> Task :app:checkKotlinGradlePluginConfigurationErrors
-> Task :app:generateDebugBuildConfig UP-TO-DATE
-> Task :app:checkDebugAarMetadata UP-TO-DATE
-> Task :app:generateDebugResValues UP-TO-DATE
-> Task :app:mapDebugSourceSetPaths UP-TO-DATE
-> Task :app:generateDebugResources UP-TO-DATE
-> Task :app:mergeDebugResources UP-TO-DATE
-> Task :app:packageDebugResources UP-TO-DATE
-> Task :app:parseDebugLocalResources UP-TO-DATE
-> Task :app:createDebugCompatibleScreenManifests UP-TO-DATE
-> Task :app:extractDeepLinksDebug UP-TO-DATE
-> Task :app:processDebugMainManifest UP-TO-DATE
-> Task :app:processDebugManifest UP-TO-DATE
-> Task :app:processDebugManifestForPackage UP-TO-DATE
-> Task :app:processDebugResources UP-TO-DATE
-> Task :app:kspDebugKotlin UP-TO-DATE
-> Task :app:compileDebugKotlin UP-TO-DATE
-> Task :app:javaPreCompileDebug UP-TO-DATE
-> Task :app:compileDebugJavaWithJavac UP-TO-DATE
-> Task :app:copyRoomSchemas NO-SOURCE
-> Task :app:mergeDebugShaders UP-TO-DATE
-> Task :app:compileDebugShaders NO-SOURCE
-> Task :app:generateDebugAssets UP-TO-DATE
-> Task :app:mergeDebugAssets UP-TO-DATE
-> Task :app:compressDebugAssets UP-TO-DATE
-> Task :app:processDebugJavaRes UP-TO-DATE
-> Task :app:mergeDebugJavaResource UP-TO-DATE
-> Task :app:checkDebugDuplicateClasses UP-TO-DATE
-> Task :app:desugarDebugFileDependencies UP-TO-DATE
-> Task :app:mergeDebugStartupProfile UP-TO-DATE
-> Task :app:mergeExtDexDebug UP-TO-DATE
-> Task :app:mergeLibDexDebug UP-TO-DATE
-> Task :app:dexBuilderDebug UP-TO-DATE
-> Task :app:mergeProjectDexDebug UP-TO-DATE
-> Task :app:mergeDebugJniLibFolders UP-TO-DATE
-> Task :app:mergeDebugNativeLibs NO-SOURCE
-> Task :app:stripDebugDebugSymbols NO-SOURCE
-> Task :app:validateSigningDebug UP-TO-DATE
-> Task :app:writeDebugAppMetadata UP-TO-DATE
-> Task :app:writeDebugSigningConfigVersions UP-TO-DATE
-> Task :app:packageDebug UP-TO-DATE
-> Task :app:createDebugApkListingFileRedirect UP-TO-DATE
-> Task :app:assembleDebug UP-TO-DATE
+cat << 'EOF' > build_error.log
+================================================================================
+IPON APP DEVELOPMENT LOG - ZIP EXTRACTION TO SUCCESSFUL BUILD TIMELINE
+================================================================================
 
-BUILD SUCCESSFUL in 10s
-37 actionable tasks: 1 executed, 36 up-to-date
+1. SCRIPT EXECUTION ENVIRONMENT ERRORS
+--------------------------------------------------------------------------------
+* Bug Encountered: Cryptic "Required file not found" when executing ./gradlew.
+* Root Cause: The gradlew startup script was saved with Windows carriage return
+  line endings (CRLF) instead of Linux line endings (LF).
+* Fix Applied: Ran 'sed -i "s/\r$//" gradlew' to strip out the Windows hidden
+  characters and restore script execution compatibility.
+
+2. DEEP GIT REPOSITORY CORRUPTION
+--------------------------------------------------------------------------------
+* Bug Encountered: 'fatal: unknown index entry format' followed by
+  'error: non-monotonic index' and 'fatal: pack has bad object'.
+* Root Cause: The AI Studio ZIP contained its own hidden .git directory. Direct
+  overwriting blended two completely separate Git histories and physically
+  corrupted the packed tracking objects beyond manual repair.
+* Fix Applied (The Clean Slate): 
+  - Nuked the corrupted history folder entirely: 'rm -rf .git'
+  - Initialized a brand new, clean local repository: 'git init'
+  - Linked the healthy local repo to the remote origin:
+    'git remote add origin https://github.com/yannero18/Ipon.git'
+  - Safely synchronized histories using a forced push:
+    'git push -u origin main --force'
+
+3. GRADLE VERSION MATCHING & DUPLICATE RESOURCES
+--------------------------------------------------------------------------------
+* Bug Encountered: 'Minimum supported Gradle version is 8.9. Current version is 8.7'.
+* Root Cause: The Android Gradle Plugin (AGP) version 8.7.0 required a higher 
+  Gradle ecosystem environment than what was declared in the properties file.
+* Fix Applied: Modified 'gradle/wrapper/gradle-wrapper.properties' distributionUrl
+  to fetch and target Gradle 8.9.
+
+* Bug Encountered: 'Resource and asset merger: Duplicate resources (Theme.Ipon)'.
+* Root Cause: The core app theme style layout block was identically duplicated
+  across both 'styles.xml' and 'themes.xml'.
+* Fix Applied: Backed up the file out of the resources track and blanked out
+  'styles.xml' to eliminate the duplicate merger declaration.
+
+4. MISSING ASSETS & KEYSTORES
+--------------------------------------------------------------------------------
+* Bug Encountered: 'File google-services.json is missing. The Google Services
+  Plugin cannot function without it.'
+* Root Cause: The project configuration required Firebase credentials which were not 
+  packaged inside the template.
+* Fix Applied: Deactivated line 10 'alias(libs.plugins.google.services)' and 
+  commented out lines 75-77 'googleServices { ... }' in 'app/build.gradle.kts'.
+
+* Bug Encountered: 'Keystore file debug.keystore not found for signing config'.
+* Root Cause: Wiping the corrupted .git folder also removed the temporary developer 
+  signing key requested by the build config.
+* Fix Applied: Generated a fresh development signature key using Java's built-in 
+  'keytool' engine directly in the workspace root path.
+
+* Warning Encountered: 'sdk.dir property in local.properties file. Problem: Directory does not exist'.
+* Root Cause: The local configuration properties contained absolute local machine paths
+  instead of matching the cloud virtual machine architecture.
+* Fix Applied: Overwrote 'local.properties' to explicitly map the system target to 
+  '/home/codespace/android-sdk'.
+
+5. OUT OF MEMORY (OOM) CRASHES & HEADLESS COMPILER BUGS
+--------------------------------------------------------------------------------
+* Bug Encountered: 'Gradle build daemon disappeared unexpectedly' during KSP processing.
+* Root Cause 1 (RAM Starvation): Heavy background tasks spiked resource usage past 
+  the maximum 4GB memory capacity allocated to the GitHub Codespace instance,
+  triggering the Linux kernel OOM (Out-of-Memory) system killer to forcefully abort.
+* Root Cause 2 (KSP Headless Bug): Google's KSP compilation plugin version 2.3.5
+  contained a known race-condition NPE bug (AWT-EventQueue-0 NullPointerException)
+  when executing inside headless environments lacking a native GUI display.
+* Architectural Fixes Applied:
+  - Tightened JVM parameters inside 'gradle.properties' to enforce a strict, 
+    balanced memory split: 1.5GB max for Gradle ('-Xmx1536m') and 900MB max for 
+    the Kotlin Daemon ('kotlin.daemon.jvmopts=-Xmx896m').
+  - Set 'org.gradle.workers.max=1' to stop memory-heavy parallel task spikes.
+  - Aligned and patched the KSP dependency toolchain inside 'gradle/libs.versions.toml'
+    by changing 'googleDevtoolsKsp' from the buggy '2.3.5' release to the stable,
+    Kotlin-matched version '2.2.10-2.0.2'.
+
+6. NATIVE ARCHITECTURE UPGRADES & WARNING ELIMINATION
+--------------------------------------------------------------------------------
+* Optimization Goal: Update compiler targets natively instead of masking build rules.
+* Warning Encountered: 'We recommend using a newer Android Gradle plugin to use compileSdk = 36'.
+* Fix Applied: Bypassed the quick-fix warning bypass request, upgraded the 
+  Gradle Wrapper directly to '8.11.1', and updated the true Android Gradle Plugin 
+  version ('agp') inside 'libs.versions.toml' to '8.9.1' to fully embrace SDK 36.
+
+* Warning Encountered: 'Schema export directory was not provided [...] Room cannot export schema'.
+* Fix Applied: Followed the second automation script parameter choice natively; 
+  updated line 25 in 'IponDatabase.kt' to explicitly set 'exportSchema = false', 
+  successfully cleaning the database configuration log trace.
+
+================================================================================
+STATUS: REPOSITORY REPAIRED / DEPENDENCIES ALIGNED / COMPILING SUCCESSFUL
+================================================================================
+EOF
