@@ -4,6 +4,10 @@
 
     <uses-permission android:name="android.permission.VIBRATE" />
 
+    <attribution
+        android:tag="haptics"
+        android:label="@string/haptics_attribution_label" />
+
     <application
         android:name=".IponApplication"
         android:allowBackup="false"

@@ -2,8 +2,15 @@ package com.ipon.app.ui.theme
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.lightColorScheme
+import androidx.compose.material3.Shapes
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+
+private val MaterialShapes = Shapes(
+    small = IponShapes.SquircleSm,
+    medium = IponShapes.SquircleMd,
+    large = IponShapes.SquircleLg
+)
 
 /**
  * Ipon is intentionally light-mode-only at the design-system level for v1.
@@ -22,7 +29,7 @@ private val IponColorScheme = lightColorScheme(
     onError = RicePaper,
     background = RicePaper,
     onBackground = KapeBrown,
-    surface = Color.White,
+    surface = WarmCream,
     onSurface = KapeBrown,
     surfaceVariant = RicePaperDeep,
     onSurfaceVariant = KapeBrownSoft,
@@ -34,6 +41,7 @@ fun IponTheme(content: @Composable () -> Unit) {
     MaterialTheme(
         colorScheme = IponColorScheme,
         typography = IponTypography,
+        shapes = MaterialShapes,
         content = content
     )
 }

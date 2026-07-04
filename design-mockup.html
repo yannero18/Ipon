@@ -6,7 +6,7 @@
 <title>Ipon — Design System Mockup</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
     --rice-paper: #F9F6F0;
@@ -23,42 +23,88 @@
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
   body {
-    background: #E8E3D8;
+    background: #EAE5DB;
     font-family: 'Inter', sans-serif;
     color: var(--kape-brown);
     display: flex;
-    justify-content: center;
+    flex-direction: column;
+    align-items: center;
     padding: 48px 24px;
+    overflow-x: hidden;
+  }
+
+  /* ====== INTRO BANNER ====== */
+  .intro-banner {
+    width: 100%;
+    max-width: 1720px;
+    margin-bottom: 40px;
+    background: var(--rice-paper);
+    padding: 32px 40px;
+    border-radius: 28px 10px 28px 10px;
+    border: 1px solid var(--line-hairline);
+    box-shadow: 0 10px 30px -10px rgba(74, 59, 50, 0.1);
+  }
+  .intro-banner h1 {
+    font-family: 'Fraunces', serif;
+    font-size: 36px;
+    font-weight: 600;
+    color: var(--ocean-teal);
+    margin-bottom: 8px;
+  }
+  .intro-banner p {
+    font-size: 15px;
+    color: var(--kape-brown-soft);
+    line-height: 1.6;
+    max-width: 900px;
   }
 
   .stage {
     display: flex;
     flex-wrap: wrap;
-    gap: 40px;
+    gap: 32px;
     align-items: flex-start;
-    max-width: 1280px;
+    justify-content: center;
+    width: 100%;
+    max-width: 1720px;
   }
 
+  /* ====== PHONE WRAPPER ====== */
+  .phone-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+  .phone-label {
+    font-family: 'Fraunces', serif;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--kape-brown);
+    letter-spacing: -0.01em;
+  }
+
+  /* ====== PHONE FRAME ====== */
   .phone {
-    width: 375px;
-    height: 812px;
+    width: 360px;
+    height: 740px;
     background: var(--rice-paper);
-    border-radius: 44px;
+    border-radius: 40px;
     box-shadow: 0 30px 60px -20px rgba(74,59,50,0.35), 0 0 0 1px rgba(74,59,50,0.06);
     overflow: hidden;
     position: relative;
     display: flex;
     flex-direction: column;
+    border: 8px solid var(--kape-brown);
   }
 
   .notch {
     position: absolute;
     top: 0; left: 50%;
     transform: translateX(-50%);
-    width: 120px;
-    height: 28px;
+    width: 110px;
+    height: 22px;
     background: var(--kape-brown);
-    border-radius: 0 0 16px 16px;
+    border-radius: 0 0 12px 12px;
     z-index: 50;
   }
 
@@ -67,10 +113,11 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 16px 28px 4px;
-    font-size: 13px;
+    padding: 14px 24px 2px;
+    font-size: 11.5px;
     font-weight: 600;
     color: var(--kape-brown);
+    z-index: 10;
   }
 
   /* ====== TABULAR NUMBER UTILITY ====== */
@@ -82,7 +129,8 @@
 
   /* ====== HEADER ====== */
   .screen-header {
-    padding: 8px 24px 18px;
+    padding: 4px 20px 12px;
+    flex-shrink: 0;
   }
   .eyebrow {
     font-size: 11px;
@@ -90,118 +138,143 @@
     text-transform: uppercase;
     color: var(--kape-brown-soft);
     font-weight: 600;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
   }
   .header-row {
     display: flex;
     justify-content: space-between;
-    align-items: baseline;
+    align-items: center;
   }
   .screen-title {
     font-family: 'Fraunces', serif;
-    font-size: 26px;
-    font-weight: 500;
-    font-optical-sizing: auto;
+    font-size: 24px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+
+  /* ====== SCROLLABLE CONTENT AREA ====== */
+  .scrollable-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 20px 24px;
+    display: flex;
+    flex-direction: column;
+  }
+  .scrollable-content::-webkit-scrollbar {
+    width: 4px;
+  }
+  .scrollable-content::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scrollable-content::-webkit-scrollbar-thumb {
+    background: rgba(74, 59, 50, 0.12);
+    border-radius: 10px;
   }
 
   /* ====== BALANCE CARD — organic squircle ====== */
   .balance-card {
-    margin: 4px 24px 20px;
     background: var(--ocean-teal);
-    border-radius: 28px 10px 28px 10px;
-    padding: 26px 24px;
+    border-radius: 24px 8px 24px 8px;
+    padding: 22px 20px;
     position: relative;
     overflow: hidden;
+    margin-bottom: 18px;
+    flex-shrink: 0;
   }
   .balance-card::after {
     content: '';
     position: absolute;
-    right: -40px; top: -40px;
-    width: 140px; height: 140px;
+    right: -30px; top: -30px;
+    width: 120px; height: 120px;
     background: var(--ocean-teal-light);
     border-radius: 40% 60% 55% 45% / 50% 45% 60% 40%;
     opacity: 0.4;
   }
   .balance-label {
     color: rgba(249,246,240,0.7);
-    font-size: 12px;
-    font-weight: 500;
-    letter-spacing: 0.03em;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
     text-transform: uppercase;
     position: relative;
     z-index: 2;
   }
   .balance-amount {
     color: var(--rice-paper);
-    font-size: 34px;
-    font-weight: 500;
-    margin-top: 6px;
+    font-size: 28px;
+    font-weight: 600;
+    margin-top: 4px;
     position: relative;
     z-index: 2;
   }
   .balance-sub {
     display: flex;
-    gap: 18px;
-    margin-top: 16px;
+    gap: 14px;
+    margin-top: 14px;
     position: relative;
     z-index: 2;
+    border-top: 1px solid rgba(249,246,240,0.15);
+    padding-top: 10px;
   }
-  .balance-sub-item { font-size: 12px; }
-  .balance-sub-item .lbl { color: rgba(249,246,240,0.6); display: block; margin-bottom: 2px; }
-  .balance-sub-item .val { color: var(--rice-paper); font-size: 14px; font-weight: 500; }
-  .val.up { color: #B8E3CC; }
-  .val.down { color: #F4C5B8; }
+  .balance-sub-item { font-size: 11px; flex: 1; }
+  .balance-sub-item .lbl { color: rgba(249,246,240,0.6); display: block; margin-bottom: 1px; }
+  .balance-sub-item .val { color: var(--rice-paper); font-size: 12px; font-weight: 600; }
+  .val.up { color: #AEE2C9; }
+  .val.down { color: #F4C4B7; }
 
   /* ====== SECTION LABEL ====== */
   .section-label {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0 24px;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
+    margin-top: 8px;
+    flex-shrink: 0;
   }
   .section-label h2 {
     font-family: 'Fraunces', serif;
-    font-size: 16px;
-    font-weight: 500;
+    font-size: 15px;
+    font-weight: 600;
   }
   .section-label span {
-    font-size: 12px;
+    font-size: 11px;
     color: var(--ocean-teal);
-    font-weight: 600;
+    font-weight: 700;
+    cursor: pointer;
   }
 
-  /* ====== TRANSACTION LIST ====== */
-  .tx-list {
-    padding: 0 24px;
-    flex: 1;
-    overflow: hidden;
-  }
+  /* ====== LEDGER TRANSACTION LIST ====== */
   .tx-day-divider {
-    font-size: 11px;
+    font-size: 10.5px;
     color: var(--kape-brown-soft);
-    font-weight: 600;
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin: 18px 0 8px;
+    letter-spacing: 0.06em;
+    margin: 12px 0 6px;
   }
   .tx-row {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 11px 14px;
+    gap: 10px;
+    padding: 10px 12px;
     background: #fff;
     border-radius: 18px 8px 18px 8px;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
     border: 1px solid var(--line-hairline);
+    transition: transform 0.2s;
+    cursor: pointer;
+  }
+  .tx-row:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px -4px rgba(74, 59, 50, 0.1);
   }
   .tx-icon {
-    width: 38px; height: 38px;
-    border-radius: 14px 6px 14px 6px;
+    width: 34px; height: 34px;
+    border-radius: 12px 6px 12px 6px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 16px;
+    font-size: 15px;
     flex-shrink: 0;
   }
   .tx-icon.transpo { background: #E4EEF0; color: var(--ocean-teal); }
@@ -210,80 +283,475 @@
   .tx-icon.groceries { background: #E9EFE0; color: #5C7A3D; }
 
   .tx-info { flex: 1; min-width: 0; }
-  .tx-name { font-size: 14px; font-weight: 500; color: var(--kape-brown); }
-  .tx-meta { font-size: 11.5px; color: var(--kape-brown-soft); margin-top: 1px; }
+  .tx-name { font-size: 13.5px; font-weight: 600; color: var(--kape-brown); }
+  .tx-meta { font-size: 11px; color: var(--kape-brown-soft); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .tx-amount {
-    font-size: 14.5px;
-    font-weight: 500;
+    font-size: 13.5px;
+    font-weight: 600;
     flex-shrink: 0;
   }
   .tx-amount.expense { color: var(--kape-brown); }
   .tx-amount.income { color: var(--ocean-teal); }
 
-  /* ====== FAB ====== */
-  .fab {
-    position: absolute;
-    bottom: 100px;
-    right: 24px;
-    width: 60px; height: 60px;
-    background: var(--jeepney-orange);
-    border-radius: 50%;
+  /* ====== SUB-TAB ROW (PLAN SCREEN) ====== */
+  .plan-tab-row {
     display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 10px 24px -6px rgba(242,140,56,0.55);
-    z-index: 40;
+    gap: 14px;
+    padding: 2px 20px 14px;
+    overflow-x: auto;
+    flex-shrink: 0;
   }
-  .fab::before, .fab::after {
+  .plan-tab-row::-webkit-scrollbar {
+    display: none;
+  }
+  .plan-tab {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: rgba(74, 59, 50, 0.5);
+    padding-bottom: 4px;
+    cursor: pointer;
+    position: relative;
+    white-space: nowrap;
+  }
+  .plan-tab.active {
+    color: var(--ocean-teal);
+    font-weight: 700;
+  }
+  .plan-tab.active::after {
     content: '';
     position: absolute;
-    background: var(--rice-paper);
+    bottom: -2px; left: 15%; right: 15%;
+    height: 4.5px;
+    background: var(--ocean-teal);
+    border-radius: 6px 2px 6px 2px;
   }
-  .fab::before { width: 22px; height: 3px; border-radius: 2px; }
-  .fab::after { width: 3px; height: 22px; border-radius: 2px; }
+
+  /* ====== ENVELOPE BUDGET CARD ====== */
+  .envelope-card {
+    background: #fff;
+    border-radius: 20px 8px 20px 8px;
+    border: 1px solid var(--line-hairline);
+    padding: 14px 14px 12px;
+    margin-bottom: 10px;
+    display: flex;
+    flex-direction: column;
+    cursor: pointer;
+  }
+  .envelope-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .envelope-cat {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 700;
+  }
+  .envelope-emoji {
+    font-size: 15px;
+  }
+  .envelope-spending {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--kape-brown-soft);
+  }
+  .envelope-spending.alert {
+    color: var(--terracotta);
+  }
+  .progress-bg {
+    width: 100%;
+    height: 8px;
+    background: var(--rice-paper-deep);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+  }
+  .progress-fill {
+    height: 100%;
+    border-radius: 12px 4px 12px 4px;
+  }
+  .progress-fill.teal { background: var(--ocean-teal); }
+  .progress-fill.terracotta { background: var(--terracotta); }
+  .envelope-footer-msg {
+    font-size: 11px;
+    color: var(--kape-brown-soft);
+    margin-top: 6px;
+    font-weight: 500;
+  }
+  .envelope-footer-msg.alert {
+    color: var(--terracotta);
+    font-weight: 600;
+  }
+
+  .add-dashed-btn {
+    border: 1.5px dashed var(--kape-brown-soft);
+    background: transparent;
+    color: var(--ocean-teal);
+    text-align: center;
+    padding: 12px;
+    border-radius: 16px 6px 16px 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 4px;
+    transition: background 0.2s;
+  }
+  .add-dashed-btn:hover {
+    background: rgba(29, 93, 107, 0.05);
+  }
+
+  /* ====== DEBT TRACKER CARDS ====== */
+  .debt-payoff-method {
+    background: rgba(74, 59, 50, 0.06);
+    border-radius: 12px;
+    padding: 3px;
+    display: flex;
+    margin-bottom: 10px;
+    flex-shrink: 0;
+  }
+  .method-btn {
+    flex: 1;
+    text-align: center;
+    padding: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--kape-brown-soft);
+    border-radius: 9px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+  }
+  .method-btn.active {
+    background: #fff;
+    color: var(--kape-brown);
+    box-shadow: 0 2px 6px rgba(74, 59, 50, 0.08);
+  }
+  .method-info-text {
+    font-size: 11.5px;
+    color: var(--kape-brown-soft);
+    line-height: 1.4;
+    margin-bottom: 16px;
+    flex-shrink: 0;
+  }
+
+  .debt-card {
+    background: #fff;
+    border-radius: 20px 8px 20px 8px;
+    border: 1px solid var(--line-hairline);
+    padding: 14px;
+    margin-bottom: 10px;
+    position: relative;
+    cursor: pointer;
+  }
+  .debt-badge {
+    position: absolute;
+    top: 14px; right: 14px;
+    background: var(--rice-paper-deep);
+    font-size: 9.5px;
+    font-weight: 700;
+    color: var(--ocean-teal);
+    padding: 2px 8px;
+    border-radius: 6px;
+    text-transform: uppercase;
+  }
+  .debt-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--kape-brown);
+    margin-bottom: 2px;
+  }
+  .debt-interest {
+    font-size: 11px;
+    color: var(--kape-brown-soft);
+    margin-bottom: 8px;
+  }
+  .debt-stats-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    margin-bottom: 6px;
+  }
+  .debt-progress-label {
+    color: var(--kape-brown-soft);
+  }
+  .debt-progress-val {
+    font-weight: 600;
+  }
+  .debt-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 8px;
+    border-top: 1px solid rgba(74, 59, 50, 0.06);
+    padding-top: 8px;
+  }
+  .debt-remaining {
+    font-size: 11px;
+    color: var(--kape-brown-soft);
+  }
+  .debt-pay-btn {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--ocean-teal);
+    cursor: pointer;
+  }
+
+  .section-title-divider {
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    font-weight: 700;
+    color: var(--kape-brown-soft);
+    margin: 18px 0 8px;
+    text-transform: uppercase;
+  }
+  .debt-card.paid {
+    opacity: 0.65;
+    background: var(--rice-paper-deep);
+  }
+  .debt-card.paid .debt-title {
+    text-decoration: line-through;
+  }
+
+  /* ====== INSIGHTS SCREEN ====== */
+  .insights-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 12px;
+    flex-shrink: 0;
+  }
+  .year-recap-pill {
+    background: rgba(29, 93, 107, 0.1);
+    color: var(--ocean-teal);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 99px;
+    cursor: pointer;
+  }
+
+  /* Smart Automation Console */
+  .automation-console {
+    background: #fff;
+    border-radius: 20px 8px 20px 8px;
+    border: 1px solid var(--line-hairline);
+    padding: 16px;
+    margin-bottom: 16px;
+    flex-shrink: 0;
+  }
+  .console-title {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--ocean-teal);
+    letter-spacing: 0.08em;
+    margin-bottom: 12px;
+  }
+  .console-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid rgba(74, 59, 50, 0.06);
+  }
+  .console-row:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+    margin-bottom: 0;
+  }
+  .console-info {
+    flex: 1;
+    padding-right: 12px;
+  }
+  .console-item-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--kape-brown);
+  }
+  .console-item-desc {
+    font-size: 11px;
+    color: var(--kape-brown-soft);
+    margin-top: 1px;
+    line-height: 1.3;
+  }
+  .console-btn {
+    background: var(--ocean-teal);
+    color: #fff;
+    border: none;
+    font-size: 11.5px;
+    font-weight: 700;
+    padding: 6px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .console-btn:hover {
+    background: var(--ocean-teal-light);
+  }
+
+  /* Mood & Spending Correlation Card */
+  .mood-card {
+    background: #fff;
+    border-radius: 20px 8px 20px 8px;
+    border: 1px solid var(--line-hairline);
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  .mood-title {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: var(--kape-brown-soft);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .mood-summary {
+    font-size: 12.5px;
+    line-height: 1.45;
+    color: var(--kape-brown);
+    margin-bottom: 10px;
+  }
+  .mood-tip {
+    background: var(--rice-paper-deep);
+    border-radius: 10px;
+    padding: 8px 10px;
+    font-size: 11px;
+    color: var(--kape-brown-soft);
+    line-height: 1.4;
+  }
+
+  /* Category Bar Chart */
+  .chart-card {
+    background: #fff;
+    border-radius: 20px 8px 20px 8px;
+    border: 1px solid var(--line-hairline);
+    padding: 16px;
+  }
+  .chart-row {
+    margin-bottom: 12px;
+  }
+  .chart-row:last-child {
+    margin-bottom: 0;
+  }
+  .chart-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11.5px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .chart-track {
+    width: 100%;
+    height: 12px;
+    background: var(--rice-paper-deep);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .chart-fill {
+    height: 100%;
+    border-radius: 6px;
+  }
 
   /* ====== BOTTOM NAV ====== */
   .bottomnav {
     display: flex;
-    justify-content: space-around;
+    justify-content: space-between;
     align-items: center;
-    padding: 14px 12px 26px;
+    padding: 8px 16px 28px;
     background: var(--rice-paper);
     border-top: 1px solid var(--line-hairline);
+    height: 84px;
+    position: relative;
+    z-index: 10;
+    flex-shrink: 0;
   }
   .nav-item {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 4px;
-    font-size: 10.5px;
+    font-size: 11px;
     color: var(--kape-brown-soft);
     font-weight: 500;
+    width: 60px;
+    cursor: pointer;
+    transition: color 0.2s ease;
   }
-  .nav-item.active { color: var(--ocean-teal); }
-  .nav-dot {
-    width: 20px; height: 20px;
-    border-radius: 7px 3px 7px 3px;
-    background: currentColor;
-    opacity: 0.15;
+  .nav-item.active {
+    color: var(--ocean-teal);
+    font-weight: 700;
   }
-  .nav-item.active .nav-dot { opacity: 1; background: var(--ocean-teal); }
+  .nav-icon {
+    font-size: 18px;
+    opacity: 0.65;
+  }
+  .nav-item.active .nav-icon {
+    opacity: 1;
+  }
+  .nav-label {
+    font-size: 10px;
+    letter-spacing: 0.02em;
+  }
+  .nav-btn-center {
+    width: 52px;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    top: -4px;
+    cursor: pointer;
+  }
+  .nav-squircle {
+    width: 44px;
+    height: 44px;
+    background: var(--jeepney-orange);
+    border-radius: 14px 6px 14px 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 22px;
+    font-weight: 600;
+    box-shadow: 0 6px 16px -4px rgba(242,140,56,0.5);
+    transition: transform 0.2s ease;
+  }
+  .nav-squircle:hover {
+    transform: scale(1.05);
+  }
 
   /* ====== SIDE PANEL: design tokens ====== */
   .tokens {
-    width: 460px;
+    width: 100%;
+    max-width: 1720px;
     background: #fff;
-    border-radius: 20px;
+    border-radius: 28px;
     padding: 36px;
     box-shadow: 0 4px 24px -8px rgba(0,0,0,0.08);
+    border: 1px solid var(--line-hairline);
+    margin-top: 16px;
+  }
+  .tokens-columns {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 40px;
+    margin-top: 24px;
+  }
+  .token-column {
+    flex: 1;
+    min-width: 300px;
   }
   .tokens h2 {
     font-family: 'Fraunces', serif;
-    font-size: 22px;
-    font-weight: 500;
-    margin-bottom: 4px;
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--ocean-teal);
   }
-  .tokens .sub { font-size: 13px; color: var(--kape-brown-soft); margin-bottom: 28px; }
+  .tokens .sub { font-size: 13.5px; color: var(--kape-brown-soft); margin-top: 2px; }
+  
   .swatch-row {
     display: flex;
     align-items: center;
@@ -305,225 +773,579 @@
   .num-compare {
     display: flex;
     gap: 32px;
-    margin-top: 14px;
   }
   .num-block { flex: 1; }
   .num-block .label { font-size: 11px; color: var(--kape-brown-soft); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.04em; }
-  .num-block .figs { font-size: 22px; }
+  .num-block .figs { font-size: 20px; font-weight: 600; }
   .num-block .figs div { margin-bottom: 4px; }
   .proportional { font-family: 'Inter', sans-serif; }
 
   .squircle-demo {
     display: flex;
     gap: 16px;
-    margin-top: 14px;
   }
   .sq {
-    width: 70px; height: 70px;
+    width: 80px; height: 80px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 10px;
+    font-size: 11px;
+    font-weight: 600;
     color: var(--kape-brown-soft);
     background: var(--rice-paper-deep);
     border: 1px solid var(--line-hairline);
+    text-align: center;
+    line-height: 1.3;
   }
   .sq.uniform { border-radius: 16px; }
   .sq.organic { border-radius: 24px 8px 24px 8px; }
 
-  .type-sample .display { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; }
-  .type-sample .body { font-family: 'Inter', sans-serif; font-size: 14px; color: var(--kape-brown-soft); margin-top: 4px; }
+  .type-sample .display { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 600; margin-bottom: 4px; }
+  .type-sample .body { font-family: 'Inter', sans-serif; font-size: 13.5px; color: var(--kape-brown-soft); line-height: 1.5; }
 </style>
 </head>
 <body>
 
+<div class="intro-banner">
+  <h1>Ipon — Design System Mockup</h1>
+  <p>
+    An authentic, editorial, and offline-first budgeting and debt planner built for Philippine financial patterns. Inspired by traditional paper logbooks, Ipon implements structural calm using a Rice Paper surface textured with asymmetric "organic squircle" corners, beautiful high-contrast typography, and a centered quick-action entry button.
+  </p>
+</div>
+
 <div class="stage">
 
   <!-- PHONE 1: HOME / LEDGER -->
-  <div class="phone">
-    <div class="notch"></div>
-    <div class="statusbar">
-      <span>9:41</span>
-      <span>● ● ●</span>
-    </div>
-
-    <div class="screen-header">
-      <div class="eyebrow">Magandang umaga</div>
-      <div class="header-row">
-        <div class="screen-title">Your ledger</div>
+  <div class="phone-container">
+    <div class="phone-label">1. Ledger Dashboard</div>
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="statusbar">
+        <span>9:41</span>
+        <span>● ● ●</span>
       </div>
-    </div>
 
-    <div class="balance-card">
-      <div class="balance-label">Available this month</div>
-      <div class="balance-amount tnum">₱18,420.75</div>
-      <div class="balance-sub">
-        <div class="balance-sub-item">
-          <span class="lbl">In</span>
-          <span class="val up tnum">₱32,000.00</span>
-        </div>
-        <div class="balance-sub-item">
-          <span class="lbl">Out</span>
-          <span class="val down tnum">₱13,579.25</span>
-        </div>
-        <div class="balance-sub-item">
-          <span class="lbl">Saved</span>
-          <span class="val tnum">₱4,200.00</span>
+      <div class="screen-header">
+        <div class="eyebrow">Magandang umaga</div>
+        <div class="header-row">
+          <div class="screen-title">Your ledger</div>
         </div>
       </div>
-    </div>
 
-    <div class="section-label">
-      <h2>Recent activity</h2>
-      <span>See all</span>
-    </div>
-
-    <div class="tx-list">
-      <div class="tx-day-divider">Today</div>
-
-      <div class="tx-row">
-        <div class="tx-icon transpo">🛺</div>
-        <div class="tx-info">
-          <div class="tx-name">Transpo</div>
-          <div class="tx-meta">Tricycle · STAMARIA-TODA-04</div>
+      <div class="scrollable-content">
+        <div class="balance-card">
+          <div class="balance-label">Available this month</div>
+          <div class="balance-amount tnum">₱18,420.75</div>
+          <div class="balance-sub">
+            <div class="balance-sub-item">
+              <span class="lbl">In</span>
+              <span class="val up tnum">₱32,000.00</span>
+            </div>
+            <div class="balance-sub-item">
+              <span class="lbl">Out</span>
+              <span class="val down tnum">₱13,579.25</span>
+            </div>
+            <div class="balance-sub-item">
+              <span class="lbl">Saved</span>
+              <span class="val tnum">₱4,200.00</span>
+            </div>
+          </div>
         </div>
-        <div class="tx-amount expense tnum">−₱25.00</div>
-      </div>
 
-      <div class="tx-row">
-        <div class="tx-icon food">🍜</div>
-        <div class="tx-info">
-          <div class="tx-name">Food</div>
-          <div class="tx-meta">Karenderia · cash</div>
+        <div class="section-label">
+          <h2>Recent activity</h2>
+          <span>See all</span>
         </div>
-        <div class="tx-amount expense tnum">−₱85.50</div>
-      </div>
 
-      <div class="tx-day-divider">Yesterday</div>
+        <div class="tx-day-divider">Today</div>
 
-      <div class="tx-row">
-        <div class="tx-icon bills">💡</div>
-        <div class="tx-info">
-          <div class="tx-name">Bills</div>
-          <div class="tx-meta">Meralco · auto-categorized</div>
+        <div class="tx-row">
+          <div class="tx-icon transpo">🛺</div>
+          <div class="tx-info">
+            <div class="tx-name">Transpo</div>
+            <div class="tx-meta">Tricycle · STAMARIA-TODA-04</div>
+          </div>
+          <div class="tx-amount expense tnum">−₱25.00</div>
         </div>
-        <div class="tx-amount expense tnum">−₱1,240.00</div>
-      </div>
 
-      <div class="tx-row">
-        <div class="tx-icon groceries">🛒</div>
-        <div class="tx-info">
-          <div class="tx-name">Groceries</div>
-          <div class="tx-meta">Sari-sari store</div>
+        <div class="tx-row">
+          <div class="tx-icon food">🍜</div>
+          <div class="tx-info">
+            <div class="tx-name">Food</div>
+            <div class="tx-meta">Karenderia · cash</div>
+          </div>
+          <div class="tx-amount expense tnum">−₱85.50</div>
         </div>
-        <div class="tx-amount expense tnum">−₱150.50</div>
-      </div>
-    </div>
 
-    <div class="fab"></div>
+        <div class="tx-day-divider">Yesterday</div>
 
-    <div class="bottomnav">
-      <div class="nav-item active">
-        <div class="nav-dot"></div>
-        Ledger
+        <div class="tx-row">
+          <div class="tx-icon bills">💡</div>
+          <div class="tx-info">
+            <div class="tx-name">Bills</div>
+            <div class="tx-meta">Meralco · auto-categorized</div>
+          </div>
+          <div class="tx-amount expense tnum">−₱1,240.00</div>
+        </div>
+
+        <div class="tx-row">
+          <div class="tx-icon groceries">🛒</div>
+          <div class="tx-info">
+            <div class="tx-name">Groceries</div>
+            <div class="tx-meta">Sari-sari store</div>
+          </div>
+          <div class="tx-amount expense tnum">−₱150.50</div>
+        </div>
       </div>
-      <div class="nav-item">
-        <div class="nav-dot"></div>
-        Insights
-      </div>
-      <div class="nav-item">
-        <div class="nav-dot"></div>
-        Envelopes
-      </div>
-      <div class="nav-item">
-        <div class="nav-dot"></div>
-        Settings
+
+      <div class="bottomnav">
+        <div class="nav-item active">
+          <div class="nav-icon">🧾</div>
+          <div class="nav-label">Ledger</div>
+        </div>
+        <div class="nav-item">
+          <div class="nav-icon">📁</div>
+          <div class="nav-label">Plan</div>
+        </div>
+        <div class="nav-btn-center">
+          <div class="nav-squircle">＋</div>
+        </div>
+        <div class="nav-item">
+          <div class="nav-icon">📊</div>
+          <div class="nav-label">Insights</div>
+        </div>
+        <div class="nav-item">
+          <div class="nav-icon">⚙️</div>
+          <div class="nav-label">Settings</div>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- DESIGN TOKEN PANEL -->
-  <div class="tokens">
-    <h2>Ipon design tokens</h2>
-    <div class="sub">Editorial &amp; organic art direction, per Section 4</div>
-
-    <div class="swatch-row">
-      <div class="swatch" style="background: var(--rice-paper); border: 1px solid var(--line-hairline);"></div>
-      <div class="swatch-info">
-        <div class="name">Rice paper</div>
-        <div class="hex">#F9F6F0</div>
-        <div class="use">Primary surface</div>
+  <!-- PHONE 2: PLAN / ENVELOPES -->
+  <div class="phone-container">
+    <div class="phone-label">2. Envelope Budgets</div>
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="statusbar">
+        <span>9:41</span>
+        <span>● ● ●</span>
       </div>
-    </div>
-    <div class="swatch-row">
-      <div class="swatch" style="background: var(--ocean-teal);"></div>
-      <div class="swatch-info">
-        <div class="name">Ocean teal</div>
-        <div class="hex">#1D5D6B</div>
-        <div class="use">Structural calm, trust, anchored stability</div>
-      </div>
-    </div>
-    <div class="swatch-row">
-      <div class="swatch" style="background: var(--jeepney-orange);"></div>
-      <div class="swatch-info">
-        <div class="name">Jeepney orange</div>
-        <div class="hex">#F28C38</div>
-        <div class="use">Action highlight — transaction FAB only</div>
-      </div>
-    </div>
-    <div class="swatch-row">
-      <div class="swatch" style="background: var(--terracotta);"></div>
-      <div class="swatch-info">
-        <div class="name">Terracotta</div>
-        <div class="hex">#D1664F</div>
-        <div class="use">Semantic alert — budget limits, no panic</div>
-      </div>
-    </div>
-    <div class="swatch-row">
-      <div class="swatch" style="background: var(--kape-brown);"></div>
-      <div class="swatch-info">
-        <div class="name">Kape brown</div>
-        <div class="hex">#4A3B32</div>
-        <div class="use">Typography primary, replaces pure black</div>
-      </div>
-    </div>
 
-    <div class="tokens-divider"></div>
-
-    <div class="type-sample">
-      <div class="display">Aa Ipon — Fraunces</div>
-      <div class="body">Inter, the body face — used for transaction names, metadata, and UI labels at 13–15px.</div>
-    </div>
-
-    <div class="tokens-divider"></div>
-
-    <div style="font-size: 13px; font-weight: 600; margin-bottom: 4px;">Tabular figures (tnum)</div>
-    <div class="num-compare">
-      <div class="num-block">
-        <div class="label">Proportional</div>
-        <div class="figs proportional">
-          <div>₱11.11</div>
-          <div>₱88,888.88</div>
+      <div class="screen-header">
+        <div class="eyebrow">Lookbook Planner</div>
+        <div class="header-row">
+          <div class="screen-title">Plan Budgets</div>
         </div>
       </div>
-      <div class="num-block">
-        <div class="label">Tabular (used)</div>
-        <div class="figs tnum">
-          <div>₱11.11</div>
-          <div>₱88,888.88</div>
+
+      <div class="plan-tab-row">
+        <div class="plan-tab active">Envelopes</div>
+        <div class="plan-tab">Recurring</div>
+        <div class="plan-tab">Goals</div>
+        <div class="plan-tab">Debts</div>
+        <div class="plan-tab">Budget</div>
+      </div>
+
+      <div class="scrollable-content">
+        <div class="section-label" style="margin-top: 0;">
+          <h2>Monthly spending caps</h2>
+        </div>
+
+        <!-- Envelope 1 -->
+        <div class="envelope-card">
+          <div class="envelope-card-header">
+            <div class="envelope-cat">
+              <span class="envelope-emoji">🍔</span>
+              <span>Food</span>
+            </div>
+            <div class="envelope-spending tnum">₱4,500.00 / ₱6,000.00</div>
+          </div>
+          <div class="progress-bg">
+            <div class="progress-fill teal" style="width: 75%;"></div>
+          </div>
+          <div class="envelope-footer-msg">₱1,500.00 remaining this month</div>
+        </div>
+
+        <!-- Envelope 2 -->
+        <div class="envelope-card">
+          <div class="envelope-card-header">
+            <div class="envelope-cat">
+              <span class="envelope-emoji">🛺</span>
+              <span>Transpo</span>
+            </div>
+            <div class="envelope-spending alert tnum">₱1,200.00 / ₱1,000.00</div>
+          </div>
+          <div class="progress-bg">
+            <div class="progress-fill terracotta" style="width: 100%;"></div>
+          </div>
+          <div class="envelope-footer-msg alert">Over by ₱200.00</div>
+        </div>
+
+        <!-- Envelope 3 -->
+        <div class="envelope-card">
+          <div class="envelope-card-header">
+            <div class="envelope-cat">
+              <span class="envelope-emoji">🛒</span>
+              <span>Groceries</span>
+            </div>
+            <div class="envelope-spending tnum">₱2,800.00 / ₱3,500.00</div>
+          </div>
+          <div class="progress-bg">
+            <div class="progress-fill teal" style="width: 80%;"></div>
+          </div>
+          <div class="envelope-footer-msg alert">At this pace, projected to reach ₱3,900.00 by month's end</div>
+        </div>
+
+        <!-- Envelope 4 -->
+        <div class="envelope-card">
+          <div class="envelope-card-header">
+            <div class="envelope-cat">
+              <span class="envelope-emoji">🧾</span>
+              <span>Bills</span>
+            </div>
+            <div class="envelope-spending tnum">₱1,240.00 / ₱5,000.00</div>
+          </div>
+          <div class="progress-bg">
+            <div class="progress-fill teal" style="width: 24.8%;"></div>
+          </div>
+          <div class="envelope-footer-msg">₱3,760.00 remaining this month</div>
+        </div>
+
+        <div class="add-dashed-btn">+ Add envelope</div>
+      </div>
+
+      <div class="bottomnav">
+        <div class="nav-item">
+          <div class="nav-icon">🧾</div>
+          <div class="nav-label">Ledger</div>
+        </div>
+        <div class="nav-item active">
+          <div class="nav-icon">📁</div>
+          <div class="nav-label">Plan</div>
+        </div>
+        <div class="nav-btn-center">
+          <div class="nav-squircle">＋</div>
+        </div>
+        <div class="nav-item">
+          <div class="nav-icon">📊</div>
+          <div class="nav-label">Insights</div>
+        </div>
+        <div class="nav-item">
+          <div class="nav-icon">⚙️</div>
+          <div class="nav-label">Settings</div>
         </div>
       </div>
-    </div>
-
-    <div class="tokens-divider"></div>
-
-    <div style="font-size: 13px; font-weight: 600; margin-bottom: 4px;">Squircle profile</div>
-    <div class="squircle-demo">
-      <div class="sq uniform">Uniform<br>radius</div>
-      <div class="sq organic">24/8/24/8<br>(used)</div>
     </div>
   </div>
 
+  <!-- PHONE 3: PLAN / DEBTS -->
+  <div class="phone-container">
+    <div class="phone-label">3. Debt Payoff Planner</div>
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="statusbar">
+        <span>9:41</span>
+        <span>● ● ●</span>
+      </div>
+
+      <div class="screen-header">
+        <div class="eyebrow">Lookbook Planner</div>
+        <div class="header-row">
+          <div class="screen-title">Plan Budgets</div>
+        </div>
+      </div>
+
+      <div class="plan-tab-row">
+        <div class="plan-tab">Envelopes</div>
+        <div class="plan-tab">Recurring</div>
+        <div class="plan-tab">Goals</div>
+        <div class="plan-tab active">Debts</div>
+        <div class="plan-tab">Budget</div>
+      </div>
+
+      <div class="scrollable-content">
+        <div class="debt-payoff-method">
+          <button class="method-btn active">Snowball</button>
+          <button class="method-btn">Avalanche</button>
+        </div>
+        <div class="method-info-text">
+          Smallest balance first -- quick wins to build emotional momentum.
+        </div>
+
+        <!-- Debt 1 -->
+        <div class="debt-card">
+          <div class="debt-badge">Priority 1</div>
+          <div class="debt-title">Tita Baby (Laptop)</div>
+          <div class="debt-interest">₱10,000.00 total · 0% interest</div>
+          
+          <div class="debt-stats-row">
+            <span class="debt-progress-label">Paid Progress</span>
+            <span class="debt-progress-val tnum">₱4,500.00 / ₱10,000.00</span>
+          </div>
+          <div class="progress-bg">
+            <div class="progress-fill teal" style="width: 45%;"></div>
+          </div>
+          <div class="debt-card-footer">
+            <span class="debt-remaining">₱5,500.00 left</span>
+            <span class="debt-pay-btn">+ Add payment</span>
+          </div>
+        </div>
+
+        <!-- Debt 2 -->
+        <div class="debt-card">
+          <div class="debt-badge">Priority 2</div>
+          <div class="debt-title">SSS Salary Loan</div>
+          <div class="debt-interest">₱24,000.00 total · 10% interest</div>
+          
+          <div class="debt-stats-row">
+            <span class="debt-progress-label">Paid Progress</span>
+            <span class="debt-progress-val tnum">₱12,000.00 / ₱24,000.00</span>
+          </div>
+          <div class="progress-bg">
+            <div class="progress-fill teal" style="width: 50%;"></div>
+          </div>
+          <div class="debt-card-footer">
+            <span class="debt-remaining">₱12,000.00 left</span>
+            <span class="debt-pay-btn">+ Add payment</span>
+          </div>
+        </div>
+
+        <div class="section-title-divider">PAID OFF</div>
+
+        <!-- Debt 3 (Paid) -->
+        <div class="debt-card paid">
+          <div class="debt-badge" style="color: var(--kape-brown-soft);">Paid</div>
+          <div class="debt-title">🎯 Coop Loan</div>
+          <div class="debt-interest">Fully paid on Jun 15, 2026</div>
+          <div class="debt-stats-row" style="margin-bottom: 0;">
+            <span class="debt-progress-label">Total payoff</span>
+            <span class="debt-progress-val tnum">₱5,000.00</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="bottomnav">
+        <div class="nav-item">
+          <div class="nav-icon">🧾</div>
+          <div class="nav-label">Ledger</div>
+        </div>
+        <div class="nav-item active">
+          <div class="nav-icon">📁</div>
+          <div class="nav-label">Plan</div>
+        </div>
+        <div class="nav-btn-center">
+          <div class="nav-squircle">＋</div>
+        </div>
+        <div class="nav-item">
+          <div class="nav-icon">📊</div>
+          <div class="nav-label">Insights</div>
+        </div>
+        <div class="nav-item">
+          <div class="nav-icon">⚙️</div>
+          <div class="nav-label">Settings</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PHONE 4: INSIGHTS & SMART CONSOLE -->
+  <div class="phone-container">
+    <div class="phone-label">4. Insights &amp; Smart Console</div>
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="statusbar">
+        <span>9:41</span>
+        <span>● ● ●</span>
+      </div>
+
+      <div class="screen-header">
+        <div class="eyebrow">Magandang araw</div>
+        <div class="insights-header-row">
+          <div class="screen-title" style="font-size: 20px;">Insights</div>
+          <div class="year-recap-pill">Year in Ipon</div>
+        </div>
+      </div>
+
+      <div class="scrollable-content">
+        <!-- Automation Console -->
+        <div class="automation-console">
+          <div class="console-title">SMART AUTOMATION CONSOLE</div>
+          
+          <div class="console-row">
+            <div class="console-info">
+              <div class="console-item-name">Sweep leftover envelopes</div>
+              <div class="console-item-desc">Sends unspent food/transpo balances directly to savings goals.</div>
+            </div>
+            <button class="console-btn">Sweep</button>
+          </div>
+
+          <div class="console-row">
+            <div class="console-info">
+              <div class="console-item-name">Process recurring transactions</div>
+              <div class="console-item-desc">Auto-log scheduled sweldo, monthly utilities, and drafts.</div>
+            </div>
+            <button class="console-btn">Process</button>
+          </div>
+        </div>
+
+        <!-- Mood Reflections -->
+        <div class="mood-card">
+          <div class="mood-title">Mood &amp; Spending patterns</div>
+          <div class="mood-summary">
+            You spent <strong>₱1,850.00</strong> on <strong>8 transactions</strong> while feeling <strong>stressed</strong>. Your top stress category was <strong>🍔 Food</strong>.
+          </div>
+          <div class="mood-tip">
+            💡 Next time you feel stressed, take a breath or log a reflection to pause before stress-spending!
+          </div>
+        </div>
+
+        <!-- Chart -->
+        <div class="chart-card">
+          <div class="mood-title">Top categories this month</div>
+          
+          <div class="chart-row">
+            <div class="chart-meta">
+              <span>Food</span>
+              <span class="tnum">₱4,500.00</span>
+            </div>
+            <div class="chart-track">
+              <div class="chart-fill" style="width: 85%; background: var(--jeepney-orange);"></div>
+            </div>
+          </div>
+
+          <div class="chart-row">
+            <div class="chart-meta">
+              <span>Bills</span>
+              <span class="tnum">₱3,200.00</span>
+            </div>
+            <div class="chart-track">
+              <div class="chart-fill" style="width: 60%; background: var(--terracotta);"></div>
+            </div>
+          </div>
+
+          <div class="chart-row">
+            <div class="chart-meta">
+              <span>Groceries</span>
+              <span class="tnum">₱2,800.00</span>
+            </div>
+            <div class="chart-track">
+              <div class="chart-fill" style="width: 50%; background: var(--ocean-teal);"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bottomnav">
+        <div class="nav-item">
+          <div class="nav-icon">🧾</div>
+          <div class="nav-label">Ledger</div>
+        </div>
+        <div class="nav-item">
+          <div class="nav-icon">📁</div>
+          <div class="nav-label">Plan</div>
+        </div>
+        <div class="nav-btn-center">
+          <div class="nav-squircle">＋</div>
+        </div>
+        <div class="nav-item active">
+          <div class="nav-icon">📊</div>
+          <div class="nav-label">Insights</div>
+        </div>
+        <div class="nav-item">
+          <div class="nav-icon">⚙️</div>
+          <div class="nav-label">Settings</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- DESIGN TOKEN PANEL -->
+<div class="tokens">
+  <h2>Ipon design tokens</h2>
+  <div class="sub">Authentic Filipino lookbook design system, matching Jetpack Compose Material 3 values</div>
+
+  <div class="tokens-columns">
+    <div class="token-column">
+      <div style="font-size: 15px; font-weight: 700; margin-bottom: 14px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ocean-teal);">Palette</div>
+      
+      <div class="swatch-row">
+        <div class="swatch" style="background: var(--rice-paper); border: 1px solid var(--line-hairline);"></div>
+        <div class="swatch-info">
+          <div class="name">Rice paper</div>
+          <div class="hex">#F9F6F0</div>
+          <div class="use">Primary canvas background — replaces harsh white with textured physical calm</div>
+        </div>
+      </div>
+      <div class="swatch-row">
+        <div class="swatch" style="background: var(--ocean-teal);"></div>
+        <div class="swatch-info">
+          <div class="name">Ocean teal</div>
+          <div class="hex">#1D5D6B</div>
+          <div class="use">Primary branding, active headers, and safe progress indicators</div>
+        </div>
+      </div>
+      <div class="swatch-row">
+        <div class="swatch" style="background: var(--jeepney-orange);"></div>
+        <div class="swatch-info">
+          <div class="name">Jeepney orange</div>
+          <div class="hex">#F28C38</div>
+          <div class="use">Interactive accents, primary actions, and bottom center add-entry FAB</div>
+        </div>
+      </div>
+      <div class="swatch-row">
+        <div class="swatch" style="background: var(--terracotta);"></div>
+        <div class="swatch-info">
+          <div class="name">Terracotta</div>
+          <div class="hex">#D1664F</div>
+          <div class="use">Attention badges, warning progress bars, and over-limit notifications</div>
+        </div>
+      </div>
+      <div class="swatch-row">
+        <div class="swatch" style="background: var(--kape-brown);"></div>
+        <div class="swatch-info">
+          <div class="name">Kape brown</div>
+          <div class="hex">#4A3B32</div>
+          <div class="use">Primary typography and outline boundaries — softer and more organic than pure black</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="token-column">
+      <div style="font-size: 15px; font-weight: 700; margin-bottom: 14px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ocean-teal);">Aesthetics &amp; Fonts</div>
+      
+      <div class="type-sample">
+        <div class="display">Aa Ipon — Fraunces Display</div>
+        <div class="body" style="margin-bottom: 24px;">Elegant serif used for main headers, available budgets, and tab sheets. Brings a warm, paper-back look.</div>
+      </div>
+
+      <div style="font-size: 13px; font-weight: 700; margin-bottom: 6px; text-transform: uppercase; color: var(--kape-brown-soft);">Tabular Figures (Tabular Mono)</div>
+      <div class="num-compare" style="margin-bottom: 24px;">
+        <div class="num-block">
+          <div class="label" style="font-size: 10px;">Proportional</div>
+          <div class="figs proportional">
+            <div>₱11.11</div>
+            <div>₱88,888.88</div>
+          </div>
+        </div>
+        <div class="num-block">
+          <div class="label" style="font-size: 10px;">Tabular alignment (Used)</div>
+          <div class="figs tnum">
+            <div>₱11.11</div>
+            <div>₱88,888.88</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="font-size: 13px; font-weight: 700; margin-bottom: 8px; text-transform: uppercase; color: var(--kape-brown-soft);">Asymmetric Corner profile</div>
+      <div class="squircle-demo">
+        <div class="sq uniform">Uniform<br>Radius<br>(16dp)</div>
+        <div class="sq organic">Organic<br>Asymmetry<br>(24dp / 8dp)</div>
+      </div>
+    </div>
+  </div>
 </div>
 
 </body>

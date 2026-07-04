@@ -1,6 +1,8 @@
 package com.ipon.app.ui.navigation
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Box
@@ -19,6 +21,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.automirrored.outlined.ReceiptLong
+import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Settings
@@ -35,6 +39,7 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import com.ipon.app.ui.theme.IponShapes
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -216,15 +221,20 @@ fun IponNavHost(viewModelFactory: IponViewModelFactory) {
                 }
             }
         }
-
         if (showBottomNav) {
+            val navShape = RoundedCornerShape(
+                topStart = 28.dp,
+                topEnd = 16.dp,
+                bottomStart = 0.dp,
+                bottomEnd = 0.dp
+            )
             NavigationBar(
                 containerColor = RicePaper,
-                tonalElevation = 8.dp,
+                tonalElevation = 0.dp,
                 modifier = Modifier
                     .fillMaxWidth()
+                    .clip(navShape)
                     .background(RicePaper)
-                    .border(1.dp, HairlineBorder)
             ) {
                 for (i in 0..4) {
                     when (i) {
@@ -250,25 +260,14 @@ fun IponNavHost(viewModelFactory: IponViewModelFactory) {
                                 icon = {
                                     Icon(
                                         imageVector = when (destination) {
-                                            IponDestination.Ledger -> {
-                                                if (selected) Icons.AutoMirrored.Filled.ReceiptLong
-                                                else Icons.AutoMirrored.Outlined.ReceiptLong
-                                            }
-                                            IponDestination.Plan -> {
-                                                if (selected) Icons.Filled.AccountBalanceWallet
-                                                else Icons.Outlined.AccountBalanceWallet
-                                            }
-                                            IponDestination.Insights -> {
-                                                if (selected) Icons.Filled.BarChart
-                                                else Icons.Outlined.BarChart
-                                            }
-                                            IponDestination.Settings -> {
-                                                if (selected) Icons.Filled.Settings
-                                                else Icons.Outlined.Settings
-                                            }
-                                            else -> Icons.AutoMirrored.Filled.HelpOutline
+                                            IponDestination.Ledger -> if (selected) Icons.AutoMirrored.Filled.ReceiptLong else Icons.AutoMirrored.Outlined.ReceiptLong
+                                            IponDestination.Plan -> if (selected) Icons.Filled.Folder else Icons.Outlined.Folder
+                                            IponDestination.Insights -> if (selected) Icons.Filled.BarChart else Icons.Outlined.BarChart
+                                            IponDestination.Settings -> if (selected) Icons.Filled.Settings else Icons.Outlined.Settings
+                                            else -> Icons.Filled.Settings
                                         },
-                                        contentDescription = destination.label
+                                        contentDescription = destination.label,
+                                        modifier = Modifier.size(24.dp)
                                     )
                                 },
                                 label = {
@@ -298,20 +297,21 @@ fun IponNavHost(viewModelFactory: IponViewModelFactory) {
                                 Box(
                                     modifier = Modifier
                                         .size(52.dp)
-                                        .clip(IponShapes.SquircleMd)
-                                    .background(JeepneyOrange)
-                                    .clickable {
-                                        navController.navigate(IponDestination.AddTransaction.createRoute())
-                                    }
-                                    .testTag("center_add_transaction_button"),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Filled.Add,
-                                    contentDescription = "New Entry",
-                                    tint = Color.White,
-                                    modifier = Modifier.size(26.dp)
-                                )
+                                        .clip(IponShapes.AsymmetricSquircle)
+                                        .background(JeepneyOrange)
+                                        .clickable {
+                                            navController.navigate(IponDestination.AddTransaction.createRoute())
+                                        }
+                                        .testTag("center_add_transaction_button"),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Add,
+                                        contentDescription = "New Entry",
+                                        tint = Color.White,
+                                        modifier = Modifier.size(26.dp)
+                                    )
+                                }
                             }
                         }
                     }
@@ -319,5 +319,4 @@ fun IponNavHost(viewModelFactory: IponViewModelFactory) {
             }
         }
     }
-}
 }

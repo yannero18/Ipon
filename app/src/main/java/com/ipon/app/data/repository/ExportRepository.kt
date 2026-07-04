@@ -10,41 +10,10 @@ import kotlinx.coroutines.flow.first
 import java.text.SimpleDateFormat
 import java.util.Locale
 
-/**
- * Exports every table Settings' "clear all data" would wipe into a single
- * human-readable CSV, written to the device's public Downloads folder via
- * MediaStore -- not app-private storage, so the file survives even if the
- * app is later uninstalled, and the person can actually find it without
- * a file-manager app that can browse app-internal storage.
- *
- * Deliberately CSV, not a database file or JSON: openable in any
- * spreadsheet app on the person's phone with zero extra tooling, which
- * matters more here than perfect machine-readability -- this app has no
- * import feature (and isn't getting one in this pass), so the export's
- * only real job is "can the person see and keep their own data," not
- * "can this be re-imported automatically."
- *
- * Uses MediaStore.Downloads (API 29+) rather than raw file paths, since
- * writing directly to external storage paths needs broad storage
- * permissions on older Android versions that this app would otherwise
- * never need to request -- everything else in Ipon works with zero
- * permissions beyond VIBRATE, and this export should not be the one
- * feature that forces a storage permission prompt onto everyone.
- */
 class ExportRepository(
     private val context: Context,
     private val database: IponDatabase
 ) {
-
-    /**
-     * Returns the display filename of the exported file on success.
-     * Throws [UnsupportedOperationException] specifically when running on
-     * an API level below 29, where MediaStore.Downloads isn't available --
-     * kept distinct from a generic write failure so SettingsViewModel can
-     * tell the person "this isn't available on your Android version"
-     * rather than a generic "export failed," which would be confusing if
-     * it happens every single time on an old device.
-     */
     suspend fun exportAllDataToCsv(): String {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
             throw UnsupportedOperationException("CSV export requires Android 10 (API 29) or newer.")
@@ -66,8 +35,8 @@ class ExportRepository(
 
         val stream = resolver.openOutputStream(uri)
             ?: throw IllegalStateException("Could not open an output stream for the export file.")
-        stream.use { it.write(csvContent.toByteArray()) }
 
+        stream.use { it.write(csvContent.toByteArray()) }
         return filename
     }
 
@@ -80,74 +49,133 @@ class ExportRepository(
         builder.appendLine("# This file contains everything stored in Ipon on this device.")
         builder.appendLine()
 
+        // 1. TRANSACTIONS
         builder.appendLine("## TRANSACTIONS")
         builder.appendLine("id,type,category,amount,merchant,note,date,auto_categorized")
         database.transactionDao().observeAll().first().forEach { tx ->
             builder.appendLine(
                 listOf(
-                    tx.id,
-                    tx.type.name,
-                    csvEscape(tx.category),
-                    (tx.amountMinorUnits / 100.0).toString(),
-                    csvEscape(tx.merchantRaw.orEmpty()),
-                    csvEscape(tx.note.orEmpty()),
-                    dateTimeFormat.format(tx.occurredAtEpochMillis),
-                    tx.isAutoCategorized.toString()
+                    tx.id, tx.type.name, csvEscape(tx.category), (tx.amountMinorUnits / 100.0).toString(),
+                    csvEscape(tx.merchantRaw.orEmpty()), csvEscape(tx.note.orEmpty()), 
+                    dateTimeFormat.format(tx.occurredAtEpochMillis), tx.isAutoCategorized.toString()
                 ).joinToString(",")
             )
         }
         builder.appendLine()
 
+        // 2. ENVELOPES
         builder.appendLine("## ENVELOPES (all months)")
-        builder.appendLine("category,period,cap")
-        database.envelopeDao().getAllForPeriodOnce("").forEach { env -> // getAllForPeriodOnce("") returns all because of wildcard in envelope SQL
+        builder.appendLine("id,category,period,cap,priority,custom_icon")
+        database.envelopeDao().getAllEver().forEach { env -> 
             builder.appendLine(
-                listOf(csvEscape(env.category), env.periodYearMonth, (env.capMinorUnits / 100.0).toString())
-                    .joinToString(",")
+                listOf(
+                    env.id, csvEscape(env.category), env.periodYearMonth, (env.capMinorUnits / 100.0).toString(),
+                    env.priority.toString(), csvEscape(env.customIcon.orEmpty())
+                ).joinToString(",")
             )
         }
         builder.appendLine()
 
+        // 3. RECURRING TEMPLATES
         builder.appendLine("## RECURRING TEMPLATES")
-        builder.appendLine("label,type,category,amount,frequency,day_of_period,paused")
+        builder.appendLine("id,label,type,category,amount,frequency,day_of_period,paused")
         database.recurringTemplateDao().observeAll().first().forEach { template ->
             builder.appendLine(
                 listOf(
-                    csvEscape(template.label),
-                    template.type.name,
-                    csvEscape(template.category),
-                    (template.amountMinorUnits / 100.0).toString(),
-                    template.frequency.name,
-                    template.dayOfPeriod.toString(),
-                    template.isPaused.toString()
+                    template.id, csvEscape(template.label), template.type.name, csvEscape(template.category), 
+                    (template.amountMinorUnits / 100.0).toString(), template.frequency.name, 
+                    template.dayOfPeriod.toString(), template.isPaused.toString()
                 ).joinToString(",")
             )
         }
         builder.appendLine()
 
+        // 4. GOALS
         builder.appendLine("## GOALS")
-        builder.appendLine("label,target,emoji,archived")
-        database.goalDao().observeActive().first().forEach { goal ->
+        builder.appendLine("id,label,target,emoji,deadline,archived")
+        database.goalDao().getAllGoalsEver().forEach { goal ->
             builder.appendLine(
-                listOf(csvEscape(goal.label), (goal.targetMinorUnits / 100.0).toString(), goal.emoji, goal.isArchived.toString())
-                    .joinToString(",")
+                listOf(
+                    goal.id, csvEscape(goal.label), (goal.targetMinorUnits / 100.0).toString(), 
+                    goal.emoji, csvEscape(goal.deadline.orEmpty()), goal.isArchived.toString()
+                ).joinToString(",")
             )
         }
         builder.appendLine()
 
+        // 5. GOAL CONTRIBUTIONS
+        builder.appendLine("## GOAL CONTRIBUTIONS")
+        builder.appendLine("id,goal_id,amount,note,date")
+        database.goalDao().observeAllContributions().first().forEach { contrib ->
+            builder.appendLine(
+                listOf(
+                    contrib.id, contrib.goalId, (contrib.amountMinorUnits / 100.0).toString(), 
+                    csvEscape(contrib.note.orEmpty()), dateTimeFormat.format(contrib.contributedAtEpochMillis)
+                ).joinToString(",")
+            )
+        }
+        builder.appendLine()
+
+        // 6. DEBTS
+        builder.appendLine("## DEBTS")
+        builder.appendLine("id,label,original_balance,interest_rate,archived")
+        database.debtDao().getAllDebtsEver().forEach { debt ->
+            builder.appendLine(
+                listOf(
+                    debt.id, csvEscape(debt.label), (debt.originalBalanceMinorUnits / 100.0).toString(), 
+                    debt.interestRatePercent?.toString() ?: "", debt.isArchived.toString()
+                ).joinToString(",")
+            )
+        }
+        builder.appendLine()
+
+        // 7. DEBT PAYMENTS
+        builder.appendLine("## DEBT PAYMENTS")
+        builder.appendLine("id,debt_id,amount,date")
+        database.debtDao().getAllDebtPaymentsEver().forEach { pay ->
+            builder.appendLine(
+                listOf(
+                    pay.id, pay.debtId, (pay.amountMinorUnits / 100.0).toString(), dateTimeFormat.format(pay.paidAtEpochMillis)
+                ).joinToString(",")
+            )
+        }
+        builder.appendLine()
+
+        // 8. DAILY REFLECTIONS
         builder.appendLine("## DAILY REFLECTIONS")
-        builder.appendLine("date,mood,note")
+        builder.appendLine("id,date,mood,note")
         database.dailyReflectionDao().observeRecent(Int.MAX_VALUE).first().forEach { reflection ->
             builder.appendLine(
-                listOf(reflection.dayKey, reflection.mood.name, csvEscape(reflection.note.orEmpty()))
-                    .joinToString(",")
+                listOf(reflection.id, reflection.dayKey, reflection.mood.name, csvEscape(reflection.note.orEmpty())).joinToString(",")
+            )
+        }
+        builder.appendLine()
+
+        // 9. LEARNED CATEGORIES
+        builder.appendLine("## LEARNED CATEGORIES")
+        builder.appendLine("merchant_key,type,category,confirm_count,last_used")
+        database.merchantCategoryMemoryDao().observeAll().first().forEach { mem ->
+            builder.appendLine(
+                listOf(
+                    csvEscape(mem.merchantKey), mem.type.name, csvEscape(mem.category), 
+                    mem.confirmCount.toString(), dateTimeFormat.format(mem.lastUsedEpochMillis)
+                ).joinToString(",")
+            )
+        }
+        builder.appendLine()
+
+        // 10. REPORTS
+        builder.appendLine("## REPORTS")
+        builder.appendLine("id,period,title,date")
+        database.reportDao().getAllReports().first().forEach { rep ->
+            builder.appendLine(
+                listOf(rep.id, rep.periodYearMonth, csvEscape(rep.title), dateTimeFormat.format(rep.createdAtEpochMillis)).joinToString(",")
             )
         }
 
         return builder.toString()
     }
 
-    /** Wraps a value in quotes and escapes embedded quotes/commas/newlines, the minimum needed for valid CSV. */
     private fun csvEscape(value: String): String {
         if (value.isEmpty()) return ""
         val needsQuoting = value.contains(',') || value.contains('"') || value.contains('\n')

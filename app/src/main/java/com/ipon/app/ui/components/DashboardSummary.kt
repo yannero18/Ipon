@@ -39,6 +39,7 @@ import com.ipon.app.ui.theme.RicePaper
 import com.ipon.app.ui.theme.RicePaperDeep
 import com.ipon.app.ui.theme.TabularNumberStyle
 import com.ipon.app.ui.theme.Terracotta
+import com.ipon.app.ui.theme.WarmCream
 import com.ipon.app.util.Money
 
 @Composable
@@ -63,10 +64,9 @@ fun DashboardSummary(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .testTag("dashboard_summary_card")
-            .border(1.dp, HairlineBorder, IponShapes.SquircleLg),
+            .testTag("dashboard_summary_card"),
         shape = IponShapes.SquircleLg,
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = WarmCream),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(

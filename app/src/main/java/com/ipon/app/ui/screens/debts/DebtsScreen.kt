@@ -1,6 +1,7 @@
 package com.ipon.app.ui.screens.debts
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
@@ -32,14 +34,22 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ipon.app.data.model.Debt
 import com.ipon.app.data.model.DebtProgress
 import com.ipon.app.data.model.PayoffMethod
 import com.ipon.app.di.IponViewModelFactory
+import com.ipon.app.ui.theme.HairlineBorder
 import com.ipon.app.ui.theme.IponShapes
+import com.ipon.app.ui.theme.OrganicSquircleShape
 import com.ipon.app.ui.theme.JeepneyOrange
 import com.ipon.app.ui.theme.KapeBrown
 import com.ipon.app.ui.theme.KapeBrownSoft
@@ -48,6 +58,7 @@ import com.ipon.app.ui.theme.RicePaper
 import com.ipon.app.ui.theme.RicePaperDeep
 import com.ipon.app.ui.theme.TabularNumberStyle
 import com.ipon.app.ui.theme.Terracotta
+import com.ipon.app.ui.theme.WarmCream
 import com.ipon.app.util.HapticFeedbackManager
 import com.ipon.app.util.Money
 
@@ -63,7 +74,7 @@ fun DebtsScreen(viewModelFactory: IponViewModelFactory) {
     var showCreateDialog by remember { mutableStateOf(false) }
     var managingDebt by remember { mutableStateOf<Debt?>(null) }
 
-    Scaffold(containerColor = RicePaper) { padding ->
+    Scaffold(containerColor = Color.Transparent) { padding ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -71,18 +82,6 @@ fun DebtsScreen(viewModelFactory: IponViewModelFactory) {
                 .padding(horizontal = 24.dp, vertical = 16.dp)
         ) {
             item {
-                Text(
-                    text = "Debts",
-                    style = MaterialTheme.typography.headlineMedium,
-                    modifier = Modifier.padding(bottom = 4.dp)
-                )
-                Text(
-                    text = "What you're paying off, in the order that helps most",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = KapeBrownSoft,
-                    modifier = Modifier.padding(bottom = 16.dp)
-                )
-
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -109,7 +108,7 @@ fun DebtsScreen(viewModelFactory: IponViewModelFactory) {
                     } else {
                         "Highest interest rate first -- pays the least interest overall."
                     },
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.labelSmall,
                     color = KapeBrownSoft,
                     modifier = Modifier.padding(top = 8.dp, bottom = 20.dp)
                 )
@@ -157,19 +156,18 @@ fun DebtsScreen(viewModelFactory: IponViewModelFactory) {
                 item {
                     Text(
                         text = "PAID OFF",
-                        style = MaterialTheme.typography.labelSmall,
+                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, letterSpacing = 1.2.sp),
                         color = OceanTeal,
-                        modifier = Modifier.padding(top = 8.dp, bottom = 8.dp)
+                        modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
                     )
                 }
                 items(uiState.paidOffDebts, key = { it.debt.id }) { progress ->
-                    Text(
-                        text = "\u2713 ${progress.debt.label}",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = OceanTeal,
-                        modifier = Modifier
-                            .clickable { managingDebt = progress.debt }
-                            .padding(vertical = 6.dp)
+                    DebtCard(
+                        progress = progress,
+                        payoffOrder = 1,
+                        onAddPayment = {},
+                        onLongPress = { managingDebt = progress.debt },
+                        modifier = Modifier.padding(bottom = 12.dp)
                     )
                 }
             }
@@ -179,13 +177,25 @@ fun DebtsScreen(viewModelFactory: IponViewModelFactory) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = 12.dp, bottom = 80.dp)
-                        .clip(IponShapes.SquircleSm)
-                        .background(RicePaperDeep)
+                        .clip(OrganicSquircleShape)
                         .clickable { showCreateDialog = true }
-                        .padding(vertical = 14.dp),
+                        .drawBehind {
+                            val strokeWidth = 1.2.dp.toPx()
+                            val dashPathEffect = PathEffect.dashPathEffect(floatArrayOf(12f, 12f), 0f)
+                            drawRoundRect(
+                                color = KapeBrownSoft.copy(alpha = 0.5f),
+                                style = Stroke(width = strokeWidth, pathEffect = dashPathEffect),
+                                cornerRadius = androidx.compose.ui.geometry.CornerRadius(20.dp.toPx())
+                            )
+                        }
+                        .padding(vertical = 16.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(text = "+ Add debt", style = MaterialTheme.typography.bodyLarge, color = OceanTeal)
+                    Text(
+                        text = "+ Add debt",
+                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                        color = OceanTeal
+                    )
                 }
             }
         }
@@ -255,13 +265,19 @@ fun DebtsScreen(viewModelFactory: IponViewModelFactory) {
 private fun MethodOption(label: String, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(10.dp))
-            .background(if (selected) OceanTeal else Color.Transparent)
+            .clip(RoundedCornerShape(12.dp))
+            .background(if (selected) Color.White else Color.Transparent)
             .clickable(onClick = onClick)
             .padding(vertical = 10.dp),
         contentAlignment = Alignment.Center
     ) {
-        Text(text = label, color = if (selected) RicePaper else KapeBrownSoft, style = MaterialTheme.typography.bodyMedium)
+        Text(
+            text = label, 
+            color = if (selected) KapeBrown else KapeBrownSoft, 
+            style = MaterialTheme.typography.bodyMedium.copy(
+                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
+            )
+        )
     }
 }
 
@@ -273,62 +289,148 @@ private fun DebtCard(
     onLongPress: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Column(
+    val isPaid = progress.isPaidOff
+
+    Box(
         modifier = modifier
             .fillMaxWidth()
-            .clip(IponShapes.SquircleLg)
-            .background(Color.White)
+            .clip(OrganicSquircleShape)
+            .background(WarmCream)
+            .border(1.dp, HairlineBorder, OrganicSquircleShape)
             .clickable(onClick = onLongPress)
-            .padding(16.dp)
     ) {
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(JeepneyOrange.copy(alpha = 0.15f))
-                        .padding(horizontal = 8.dp, vertical = 2.dp)
-                ) {
-                    Text("#$payoffOrder", style = MaterialTheme.typography.bodyMedium, color = JeepneyOrange)
-                }
-                Text(
-                    text = progress.debt.label,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = KapeBrown,
-                    modifier = Modifier.padding(start = 8.dp)
-                )
-            }
-            progress.debt.interestRatePercent?.let { rate ->
-                Text(text = "$rate% APR", style = MaterialTheme.typography.bodyMedium, color = KapeBrownSoft)
-            }
-        }
-
-        Text(
-            text = "${progress.remaining.formatPhp()} left of ${progress.debt.originalBalance.formatPhp()}",
-            style = MaterialTheme.typography.bodyMedium.merge(TabularNumberStyle),
-            color = KapeBrownSoft,
-            modifier = Modifier.padding(top = 8.dp)
-        )
-
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 8.dp)
-                .height(10.dp)
-                .clip(RoundedCornerShape(5.dp))
-                .background(RicePaperDeep)
+                .padding(16.dp)
         ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth(fraction = progress.fractionPaid.coerceIn(0f, 1f))
-                    .height(10.dp)
-                    .clip(IponShapes.SquircleSm)
-                    .background(OceanTeal)
-            )
-        }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = progress.debt.label,
+                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                        color = KapeBrown
+                    )
+                    
+                    if (isPaid) {
+                        Text(
+                            text = "Fully paid off",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = KapeBrownSoft,
+                            modifier = Modifier.padding(top = 2.dp)
+                        )
+                    } else {
+                        val rateText = if (progress.debt.interestRatePercent != null) {
+                            "${progress.debt.interestRatePercent}% interest"
+                        } else {
+                            "0% interest"
+                        }
+                        Text(
+                            text = "${progress.debt.originalBalance.formatPhp()} total · $rateText",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = KapeBrownSoft,
+                            modifier = Modifier.padding(top = 2.dp)
+                        )
+                    }
+                }
+                
+                Box(
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .background(
+                            if (isPaid) Color(0xFFE5EFE5) else OceanTeal.copy(alpha = 0.08f)
+                        )
+                        .padding(horizontal = 10.dp, vertical = 4.dp)
+                ) {
+                    Text(
+                        text = if (isPaid) "PAID" else "PRIORITY $payoffOrder",
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.5.sp
+                        ),
+                        color = if (isPaid) Color(0xFF1D5D6B) else OceanTeal
+                    )
+                }
+            }
 
-        TextButton(onClick = onAddPayment, modifier = Modifier.padding(top = 8.dp)) {
-            Text("+ Record payment", color = OceanTeal)
+            Spacer(modifier = Modifier.height(16.dp))
+
+            if (isPaid) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Total payoff",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = KapeBrownSoft
+                    )
+                    Text(
+                        text = progress.debt.originalBalance.formatPhp(),
+                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold).merge(TabularNumberStyle),
+                        color = KapeBrown
+                    )
+                }
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Paid Progress",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = KapeBrownSoft
+                    )
+                    Text(
+                        text = "${progress.paid.formatPhp()} / ${progress.debt.originalBalance.formatPhp()}",
+                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold).merge(TabularNumberStyle),
+                        color = KapeBrown
+                    )
+                }
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 10.dp)
+                        .height(10.dp)
+                        .clip(CircleShape)
+                        .background(RicePaperDeep)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(fraction = progress.fractionPaid.coerceIn(0f, 1f))
+                            .height(10.dp)
+                            .clip(CircleShape)
+                            .background(OceanTeal)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "${progress.remaining.formatPhp()} left",
+                        style = MaterialTheme.typography.bodyMedium.merge(TabularNumberStyle),
+                        color = KapeBrownSoft
+                    )
+                    Text(
+                        text = "+ Add payment",
+                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                        color = OceanTeal,
+                        modifier = Modifier.clickable(onClick = onAddPayment)
+                    )
+                }
+            }
         }
     }
 }

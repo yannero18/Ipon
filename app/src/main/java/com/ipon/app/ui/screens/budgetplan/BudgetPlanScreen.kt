@@ -54,7 +54,7 @@ fun BudgetPlanScreen(viewModelFactory: IponViewModelFactory) {
     val uiState by viewModel.uiState.collectAsState()
     var selectedTab by remember { mutableStateOf(FrameworkTab.FIFTY_THIRTY_TWENTY) }
 
-    Scaffold(containerColor = RicePaper) { padding ->
+    Scaffold(containerColor = Color.Transparent) { padding ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -62,18 +62,6 @@ fun BudgetPlanScreen(viewModelFactory: IponViewModelFactory) {
                 .padding(horizontal = 24.dp, vertical = 16.dp)
         ) {
             item {
-                Text(
-                    text = "Budget plan",
-                    style = MaterialTheme.typography.headlineMedium,
-                    modifier = Modifier.padding(bottom = 4.dp)
-                )
-                Text(
-                    text = "Two ways to look at this month's income",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = KapeBrownSoft,
-                    modifier = Modifier.padding(bottom = 16.dp)
-                )
-
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -94,6 +82,13 @@ fun BudgetPlanScreen(viewModelFactory: IponViewModelFactory) {
                         modifier = Modifier.weight(1f)
                     )
                 }
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    text = "Two ways to look at this month's income",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = KapeBrownSoft,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
             }
 
             when (selectedTab) {

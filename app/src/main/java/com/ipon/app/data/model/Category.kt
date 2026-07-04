@@ -21,7 +21,7 @@ sealed interface TransactionCategory {
  * rules without cross-contaminating matches.
  */
 enum class ExpenseCategory(override val displayName: String, override val emoji: String) : TransactionCategory {
-    TRANSPO("Transpo", "🚲"),
+    TRANSPO("Transpo", "🚕"),
     FOOD("Food", "🍔"),
     BILLS("Bills", "🧾"),
     GROCERIES("Groceries", "🛒"),

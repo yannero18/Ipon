@@ -1,95 +1,222 @@
 package com.ipon.app.ui.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.coerceAtLeast
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.BaselineShift
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
-import com.ipon.app.ui.theme.IponShapes
-import com.ipon.app.ui.theme.OceanTeal
-import com.ipon.app.ui.theme.OceanTealLight
-import com.ipon.app.ui.theme.Terracotta
+import androidx.compose.ui.unit.sp
 import com.ipon.app.ui.theme.RicePaper
 import com.ipon.app.ui.theme.TabularNumberStyle
+import com.ipon.app.ui.theme.OceanTeal
+import com.ipon.app.ui.theme.IponShapes
+import androidx.compose.material3.HorizontalDivider
+import com.ipon.app.ui.theme.TabularSerifNumberStyle
 import com.ipon.app.util.Money
+
+// Localized Color Palette matching CSS design tokens
+object KapePalette {
+    val BackgroundWarm = Color(0xFFF6EDE0)    // Warm, slightly saturated amber textured rice-paper off-white
+    val HeroCardSolid = Color(0xFF4E3729)     // Rich roasted clay espresso brown ink for solid ink/cards
+    val AccentTerracotta = Color(0xFFD1664F)  // Warm Earth Accent
+    val TextPrimary = Color(0xFF4E3729)       // Rich roasted clay espresso brown ink for text
+    val TextLight = Color(0xFFFDF9F0)         // Soft warm organic cream text
+    
+    // Deep slate-teal palette for the premium contrast anchor card
+    val SlateTealStart = Color(0xFF1D5D6B)    // Premium Deep Slate Teal (OceanTeal)
+    val SlateTealMedium = Color(0xFF164954)   // Muted Marine
+    val SlateTealEnd = Color(0xFF0C2B32)      // Midnight Teal
+    val MockupTealHero = Color(0xFF1D5D6B)    // Premium Teal Anchor
+    val GreenIncome = Color(0xFF8CE1C2)       // Soft Muted incoming green
+    val AccentCoral = Color(0xFFF6A998)       // Soft Outgoing text accent
+}
 
 @Composable
 fun BalanceCard(
     availableThisMonth: Money,
     income: Money,
     expense: Money,
-    estimatedDaysOfRunway: Int?,
-    modifier: Modifier = Modifier
+    totalSavings: Money,
+    modifier: Modifier = Modifier,
+    accountName: String = "Yannero",
+    estimatedDaysOfRunway: Int? = null
 ) {
-    // Ensure all padding values are safe and positive
-    val safePaddingH = 24.dp.coerceAtLeast(0.dp)
-    val safePaddingV = 24.dp.coerceAtLeast(0.dp)
-    
-    Column(
+    // Exact asymmetric squircle shape (24dp/8dp/24dp/8dp) requested in the design specification
+    val cardShape = IponShapes.AsymmetricSquircle
+
+    // Split balance into whole number and decimal cents parts for high-contrast sizing
+    val rawAmountInDouble = availableThisMonth.minorUnits.toDouble() / 100.0
+    val formattedBalance = String.format("%,.2f", rawAmountInDouble)
+    val parts = formattedBalance.split(".")
+    val wholeAmount = parts[0]
+    val centsAmount = parts.getOrNull(1) ?: "00"
+
+    Box(
         modifier = modifier
             .fillMaxWidth()
-            .clip(IponShapes.SquircleLg)
-            .background(OceanTeal)
-            .padding(horizontal = safePaddingH, vertical = safePaddingV)
-    ) {
-        Text(
-            text = "AVAILABLE THIS MONTH",
-            style = MaterialTheme.typography.labelSmall,
-            color = RicePaper.copy(alpha = 0.7f)
-        )
-
-        Text(
-            text = availableThisMonth.formatPhp(),
-            style = MaterialTheme.typography.headlineMedium.merge(TabularNumberStyle),
-            color = RicePaper,
-            modifier = Modifier.padding(top = 6.dp.coerceAtLeast(0.dp))
-        )
-
-        Row(
-            modifier = Modifier.padding(top = 16.dp.coerceAtLeast(0.dp)),
-            horizontalArrangement = Arrangement.spacedBy(18.dp)
-        ) {
-            BalanceSubItem(label = "In", amount = income, valueColor = OceanTealLight)
-            BalanceSubItem(label = "Out", amount = expense, valueColor = Terracotta)
-        }
-
-        // Only render if days is valid and non-negative
-        if (estimatedDaysOfRunway != null && estimatedDaysOfRunway >= 0) {
-            Text(
-                text = when (estimatedDaysOfRunway) {
-                    0 -> "At this pace, your balance is already spent"
-                    1 -> "At this pace, about 1 day of balance left"
-                    else -> "At this pace, about $estimatedDaysOfRunway days of balance left"
-                },
-                style = MaterialTheme.typography.bodyMedium,
-                color = RicePaper.copy(alpha = 0.7f),
-                modifier = Modifier.padding(top = 14.dp.coerceAtLeast(0.dp))
+            .background(
+                color = OceanTeal,
+                shape = cardShape
             )
+            .drawBehind {
+                val h = this.size.height
+                val w = this.size.width
+
+                // Draw a beautiful, elegant semi-transparent overlapping backdrop curve on the right edge
+                drawCircle(
+                    color = Color(0x10FFFFFF), // ~6% opacity white
+                    radius = h * 0.9f,
+                    center = androidx.compose.ui.geometry.Offset(w * 0.98f, h * 0.35f)
+                )
+                drawCircle(
+                    color = Color(0x06FFFFFF), // ~2% opacity white
+                    radius = h * 0.6f,
+                    center = androidx.compose.ui.geometry.Offset(w * 0.98f, h * 0.35f)
+                )
+            }
+            .padding(horizontal = 24.dp, vertical = 24.dp)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            // Label section
+            Text(
+                text = "AVAILABLE THIS MONTH",
+                color = RicePaper.copy(alpha = 0.65f),
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.2.sp
+                )
+            )
+            
+            Spacer(modifier = Modifier.height(10.dp))
+            
+            // Massive balance with stepped decimal numbers
+            Text(
+                text = buildAnnotatedString {
+                    // Currency sign matched in font size and style beautifully
+                    withStyle(style = SpanStyle(
+                        fontSize = 32.sp, 
+                        fontWeight = FontWeight.Bold,
+                        fontFeatureSettings = "tnum"
+                    )) {
+                        append("₱")
+                    }
+                    // Bold main display numbers
+                    withStyle(style = SpanStyle(
+                        fontSize = 44.sp, 
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = (-0.5).sp,
+                        fontFeatureSettings = "tnum"
+                    )) {
+                        append(wholeAmount)
+                    }
+                    // Decimal parts softly stepped down
+                    withStyle(style = SpanStyle(
+                        fontSize = 28.sp, 
+                        fontWeight = FontWeight.Bold, 
+                        color = RicePaper.copy(alpha = 0.9f),
+                        fontFeatureSettings = "tnum"
+                    )) {
+                        append(".$centsAmount")
+                    }
+                },
+                color = RicePaper,
+                style = TabularSerifNumberStyle
+            )
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // Beautiful thin horizontal divider matching the design specification
+            HorizontalDivider(
+                color = RicePaper.copy(alpha = 0.15f),
+                thickness = 1.dp
+            )
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // Metrics section: In, Out, Saved distributed as columns
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                MetricColumn(
+                    label = "In", 
+                    amount = income, 
+                    amountColor = KapePalette.GreenIncome,
+                    modifier = Modifier.weight(1f)
+                )
+                MetricColumn(
+                    label = "Out", 
+                    amount = expense, 
+                    amountColor = KapePalette.AccentCoral,
+                    modifier = Modifier.weight(1f)
+                )
+                MetricColumn(
+                    label = "Saved", 
+                    amount = totalSavings, 
+                    amountColor = KapePalette.TextLight,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+
+            // Optional runway days indicator below
+            if (estimatedDaysOfRunway != null && estimatedDaysOfRunway >= 0) {
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = when (estimatedDaysOfRunway) {
+                        0 -> "At this pace, your balance is spent"
+                        1 -> "At this pace, about 1 day left"
+                        else -> "At this pace, about $estimatedDaysOfRunway days of balance left"
+                    },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = RicePaper.copy(alpha = 0.7f)
+                )
+            }
         }
     }
 }
 
 @Composable
-private fun BalanceSubItem(label: String, amount: Money, valueColor: Color) {
-    Column {
+private fun MetricColumn(
+    label: String,
+    amount: Money,
+    amountColor: Color,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+        modifier = modifier
+    ) {
         Text(
             text = label,
-            style = MaterialTheme.typography.bodyMedium,
-            color = RicePaper.copy(alpha = 0.6f)
+            color = RicePaper.copy(alpha = 0.6f),
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Medium
         )
         Text(
-            text = amount.formatPhp(),
-            style = MaterialTheme.typography.bodyLarge.merge(TabularNumberStyle),
-            color = valueColor
+            text = buildAnnotatedString {
+                withStyle(style = SpanStyle(fontSize = 13.sp, fontWeight = FontWeight.Normal, fontFeatureSettings = "tnum")) {
+                    append("₱")
+                }
+                withStyle(style = SpanStyle(fontSize = 17.sp, fontWeight = FontWeight.Bold, fontFeatureSettings = "tnum")) {
+                    append(String.format("%,.2f", amount.minorUnits.toDouble() / 100.0))
+                }
+            },
+            color = amountColor,
+            style = TabularSerifNumberStyle
         )
     }
 }

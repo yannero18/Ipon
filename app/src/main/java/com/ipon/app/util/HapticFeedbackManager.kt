@@ -15,12 +15,19 @@ import android.os.VibratorManager
  */
 class HapticFeedbackManager(context: Context) {
 
-    private val vibrator: Vibrator? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-        val manager = context.getSystemService(VibratorManager::class.java)
-        manager?.defaultVibrator
-    } else {
-        @Suppress("DEPRECATION")
-        context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
+    private val vibrator: Vibrator? = run {
+        val attributionContext = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            context.createAttributionContext("haptics")
+        } else {
+            context
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val manager = attributionContext.getSystemService(VibratorManager::class.java)
+            manager?.defaultVibrator
+        } else {
+            @Suppress("DEPRECATION")
+            attributionContext.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
+        }
     }
 
     /**

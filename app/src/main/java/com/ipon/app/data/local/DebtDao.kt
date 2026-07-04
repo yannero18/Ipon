@@ -40,4 +40,10 @@ interface DebtDao {
         """
     )
     fun observePaidTotals(): Flow<List<DebtPaidTotal>>
+
+    @Query("SELECT * FROM debts ORDER BY createdAtEpochMillis ASC")
+    suspend fun getAllDebtsEver(): List<DebtEntity>
+
+    @Query("SELECT * FROM debt_payments ORDER BY paidAtEpochMillis ASC")
+    suspend fun getAllDebtPaymentsEver(): List<DebtPaymentEntity>
 }

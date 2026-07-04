@@ -30,6 +30,7 @@ import com.ipon.app.ui.screens.settings.LearnedCategoriesViewModel
 import com.ipon.app.ui.screens.settings.SettingsViewModel
 import com.ipon.app.util.HapticFeedbackManager
 import com.ipon.app.util.KeywordRuleMerchantClassifier
+import com.ipon.app.util.OnboardingPreferences
 
 /**
  * Manual dependency container for the prototype. A real app would likely
@@ -53,6 +54,7 @@ class IponAppContainer(context: Context) {
     val reportRepository = ReportRepository(database.reportDao())
     val merchantClassifier = KeywordRuleMerchantClassifier()
     val hapticFeedback = HapticFeedbackManager(context)
+    val onboardingPreferences = OnboardingPreferences(context)
 }
 
 class IponViewModelFactory(private val container: IponAppContainer) : ViewModelProvider.Factory {
@@ -62,7 +64,8 @@ class IponViewModelFactory(private val container: IponAppContainer) : ViewModelP
             container.repository,
             container.envelopeRepository,
             container.goalRepository,
-            container.recurringTemplateRepository
+            container.recurringTemplateRepository,
+            container.onboardingPreferences
         ) as T
         AddTransactionViewModel::class.java -> AddTransactionViewModel(
             container.repository,
@@ -74,7 +77,8 @@ class IponViewModelFactory(private val container: IponAppContainer) : ViewModelP
             container.envelopeRepository,
             container.recurringTemplateRepository,
             container.goalRepository,
-            container.reportRepository
+            container.reportRepository,
+            container.dailyReflectionRepository
         ) as T
         EnvelopesViewModel::class.java -> EnvelopesViewModel(container.envelopeRepository, container.repository) as T
         RecurringViewModel::class.java -> RecurringViewModel(container.recurringTemplateRepository, container.repository) as T

@@ -15,6 +15,8 @@ import com.ipon.app.data.repository.PeriodSummary
 import com.ipon.app.data.repository.TransactionRepository
 import com.ipon.app.data.repository.RecurringTemplateRepository
 import com.ipon.app.data.repository.GoalRepository
+import com.ipon.app.data.repository.DailyReflectionRepository
+import com.ipon.app.data.model.DailyReflection
 import com.ipon.app.data.repository.ReportRepository
 import com.ipon.app.util.Money
 import kotlinx.coroutines.flow.SharingStarted
@@ -33,6 +35,8 @@ data class InsightsUiState(
     val trends: List<CategoryTrend> = emptyList(),
     val suggestions: List<SavingsSuggestion> = emptyList(),
     val envelopes: List<EnvelopeProgress> = emptyList(),
+    val reflections: List<DailyReflection> = emptyList(),
+    val monthTransactions: List<Transaction> = emptyList(),
     val isLoading: Boolean = true
 )
 
@@ -41,7 +45,8 @@ class InsightsViewModel(
     private val envelopeRepository: EnvelopeRepository,
     private val recurringTemplateRepository: RecurringTemplateRepository,
     private val goalRepository: GoalRepository,
-    private val reportRepository: ReportRepository
+    private val reportRepository: ReportRepository,
+    private val dailyReflectionRepository: DailyReflectionRepository
 ) : ViewModel() {
 
     private val thisMonthRange = monthRangeMillis(monthOffset = 0)
@@ -61,11 +66,22 @@ class InsightsViewModel(
             periodYearMonth = currentPeriodKey,
             startEpochMillis = thisMonthRange.first,
             endEpochMillis = thisMonthRange.second
-        )
-    ) { summary, breakdown, trends, envelopeProgress ->
+        ),
+        dailyReflectionRepository.observeRecent(400),
+        transactionRepository.observeBetween(thisMonthRange.first, thisMonthRange.second)
+    ) { array ->
+        val summary = array[0] as PeriodSummary
+        val breakdown = array[1] as List<CategorySlice>
+        val trends = array[2] as List<CategoryTrend>
+        val envelopeProgress = array[3] as List<EnvelopeProgress>
+        val reflections = array[4] as List<DailyReflection>
+        val monthTransactions = array[5] as List<Transaction>
+
         val filteredTrends = trends
             .filter { !it.thisMonth.isZero || !it.lastMonth.isZero }
             .sortedByDescending { it.thisMonth.minorUnits }
+
+        val reflectionsThisMonth = reflections.filter { it.dayKey.startsWith(currentPeriodKey) }
 
         InsightsUiState(
             summary = summary,
@@ -78,6 +94,8 @@ class InsightsViewModel(
                 totalExpense = summary.expense
             ),
             envelopes = envelopeProgress,
+            reflections = reflectionsThisMonth,
+            monthTransactions = monthTransactions,
             isLoading = false
         )
     }.stateIn(

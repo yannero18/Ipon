@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Ipon</string>
+    <string name="haptics_attribution_label">Haptic and Audio Feedback</string>
 </resources>

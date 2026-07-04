@@ -45,6 +45,7 @@ import com.ipon.app.ui.components.TransactionRow
 import com.ipon.app.ui.components.TransactionCoinFab
 import com.ipon.app.ui.components.InteractiveEnvelopeDonutChart
 import com.ipon.app.ui.components.DashboardSummary
+import com.ipon.app.ui.components.BalanceCard
 import com.ipon.app.ui.icons.icon
 import com.ipon.app.ui.theme.*
 import com.ipon.app.util.Money
@@ -93,6 +94,27 @@ fun LedgerScreen(
         uiState.transactions.map { it.category }.distinct().sorted()
     }
 
+    val groupedTransactions = remember(filteredTransactions) {
+        val todayCal = Calendar.getInstance()
+        val yesterdayCal = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -1) }
+        val formatFull = SimpleDateFormat("EEEE, MMM d", Locale.US)
+        
+        filteredTransactions.groupBy { tx ->
+            val txCal = Calendar.getInstance().apply { timeInMillis = tx.occurredAtEpochMillis }
+            when {
+                txCal.get(Calendar.YEAR) == todayCal.get(Calendar.YEAR) &&
+                txCal.get(Calendar.DAY_OF_YEAR) == todayCal.get(Calendar.DAY_OF_YEAR) -> "TODAY"
+                
+                txCal.get(Calendar.YEAR) == yesterdayCal.get(Calendar.YEAR) &&
+                txCal.get(Calendar.DAY_OF_YEAR) == yesterdayCal.get(Calendar.DAY_OF_YEAR) -> "YESTERDAY"
+                
+                else -> formatFull.format(tx.occurredAtEpochMillis).uppercase(Locale.US)
+            }
+        }.map { (title, items) ->
+            title to items
+        }
+    }
+
     val context = LocalContext.current
     val haptics = remember(context) { com.ipon.app.util.HapticFeedbackManager(context) }
 
@@ -103,8 +125,8 @@ fun LedgerScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(scaffoldPadding)
-                .padding(horizontal = 16.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp)
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // 1. Header & Greeting
             item {
@@ -123,30 +145,20 @@ fun LedgerScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 16.dp, bottom = 8.dp)
+                        .padding(top = 4.dp, bottom = 0.dp)
                 ) {
                     // Row for Greeting and Local Date separated cleanly
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = greeting,
-                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                            color = OceanTeal,
+                    Text(
+                        text = greeting,
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontWeight = FontWeight.Bold,
                             letterSpacing = 1.5.sp
-                        )
-                        Text(
-                            text = formattedDate,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = KapeBrownSoft,
-                            letterSpacing = 0.5.sp
-                        )
-                    }
+                        ),
+                        color = KapeBrownSoft
+                    )
                     
                     // Vertical Spacer between greeting/date and the title row
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(4.dp))
                     
                     // Row for "Dashboard" title and the top-right outlined action slot
                     Row(
@@ -155,29 +167,24 @@ fun LedgerScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Dashboard",
+                            text = "Your ledger",
                             style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
                             color = KapeBrown
                         )
                         
-                        // Dynamic vector placeholder slot on the top-right corner for a notification bell or profile action to balance out the layout
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                        // Lookbook aesthetic option slot on the top-right corner
+                        IconButton(
+                            onClick = { /* Action placeholder */ },
+                            modifier = Modifier
+                                .size(40.dp)
+                                .border(1.dp, HairlineBorder, CircleShape)
                         ) {
-                            IconButton(
-                                onClick = { /* Action placeholder */ },
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .border(1.dp, HairlineBorder, CircleShape)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Outlined.Notifications,
-                                    contentDescription = "Notifications",
-                                    tint = KapeBrown,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
+                            Text(
+                                text = "•••",
+                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                                color = KapeBrown,
+                                modifier = Modifier.padding(bottom = 4.dp) // Align vertically
+                            )
                         }
                     }
                 }
@@ -185,247 +192,13 @@ fun LedgerScreen(
 
             // 2. Actionable Spending Power Hero Card (Refactored to AVAILABLE TO SPEND)
             item {
-                val totalCap = uiState.totalEnvelopeCaps.minorUnits
-                val remaining = uiState.remainingBudget.minorUnits
-                val budgetProgressFraction = if (totalCap > 0L) {
-                    (remaining.toFloat() / totalCap.toFloat()).coerceIn(0f, 1f)
-                } else {
-                    1f
-                }
-
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(IponShapes.SquircleLg)
-                        .background(
-                            brush = androidx.compose.ui.graphics.Brush.linearGradient(
-                                colors = listOf(OceanTeal, Color(0xFF0C3841))
-                            )
-                        )
-                        .drawBehind {
-                            val h = this.size.height
-                            val w = this.size.width
-                            val path = androidx.compose.ui.graphics.Path().apply {
-                                moveTo(0f, h * 0.82f)
-                                cubicTo(
-                                    w * 0.25f, h * 0.9f,
-                                    w * 0.45f, h * 0.55f,
-                                    w * 0.7f, h * 0.65f
-                                )
-                                cubicTo(
-                                    w * 0.85f, h * 0.7f,
-                                    w * 0.95f, h * 0.38f,
-                                    w, h * 0.42f
-                                )
-                            }
-                            this.drawPath(
-                                path = path,
-                                color = Color(0x1F34D399), // Neon mint/teal glow
-                                style = androidx.compose.ui.graphics.drawscope.Stroke(width = 7.dp.toPx(), cap = StrokeCap.Round)
-                            )
-                            this.drawPath(
-                                path = path,
-                                color = Color(0x3BFFFFFF), // Crisp clean overlay
-                                style = androidx.compose.ui.graphics.drawscope.Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round)
-                            )
-                        },
-                    shape = IponShapes.SquircleLg,
-                    colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-                ) {
-                    Column(modifier = Modifier.padding(20.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.Top
-                        ) {
-                            Column {
-                                Text(
-                                    text = "AVAILABLE TO SPEND",
-                                    style = MaterialTheme.typography.labelSmall.copy(
-                                        fontWeight = FontWeight.Bold,
-                                        letterSpacing = 2.sp
-                                    ),
-                                    color = RicePaper.copy(alpha = 0.75f)
-                                )
-                                Text(
-                                    text = uiState.remainingBudget.formatPhp(),
-                                    style = MaterialTheme.typography.headlineLarge.copy(
-                                        fontSize = 34.sp,
-                                        fontWeight = FontWeight.Black,
-                                        letterSpacing = (-0.5).sp
-                                    ).merge(TabularSerifNumberStyle),
-                                    color = RicePaper,
-                                    modifier = Modifier.padding(top = 4.dp)
-                                )
-                            }
-                            // Remaining Budget Percentage Pill
-                            Box(
-                                modifier = Modifier
-                                    .clip(CircleShape)
-                                    .background(RicePaper.copy(alpha = 0.15f))
-                                    .padding(horizontal = 10.dp, vertical = 6.dp)
-                            ) {
-                                Text(
-                                    text = "${(budgetProgressFraction * 100).toInt()}% Left",
-                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                    color = RicePaper
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(20.dp))
-
-                        // Sleek, ultra-thin linear progress bar of remaining budget
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(4.dp)
-                                .clip(CircleShape)
-                                .background(RicePaper.copy(alpha = 0.2f))
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth(fraction = budgetProgressFraction)
-                                    .height(4.dp)
-                                    .clip(CircleShape)
-                                    .background(Color(0xFF34D399))
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "${uiState.remainingBudget.formatPhp()} left of ${uiState.totalEnvelopeCaps.formatPhp()} caps",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = RicePaper.copy(alpha = 0.75f)
-                            )
-                            
-                            val paydayPacing = remember(uiState.remainingBudget) {
-                                val calendar = Calendar.getInstance()
-                                val currentDay = calendar.get(Calendar.DAY_OF_MONTH)
-                                val maxDays = calendar.getActualMaximum(Calendar.DAY_OF_MONTH)
-                                val (daysRemaining, label) = if (currentDay < 15) {
-                                    (15 - currentDay) to "15th"
-                                } else {
-                                    (maxDays - currentDay + 1) to "1st"
-                                }
-                                val days = daysRemaining.coerceAtLeast(1)
-                                val safeSpendMinor = uiState.remainingBudget.minorUnits / days
-                                val safeSpend = Money.ofMinorUnits(safeSpendMinor.coerceAtLeast(0L))
-                                safeSpend to "$days ${if (days == 1) "day" else "days"} to $label"
-                            }
-                            
-                            Text(
-                                text = "${paydayPacing.first.formatPhp()} safe/day (${paydayPacing.second})",
-                                style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
-                                color = Color(0xFF34D399)
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(16.dp))
-                        HorizontalDivider(color = RicePaper.copy(alpha = 0.15f), thickness = 1.dp)
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        // Low-profile secondary row at the bottom of the card
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column {
-                                Text(
-                                    text = "TOTAL SAVINGS",
-                                    style = MaterialTheme.typography.labelSmall.copy(
-                                        fontWeight = FontWeight.Bold,
-                                        letterSpacing = 1.2.sp
-                                    ),
-                                    color = RicePaper.copy(alpha = 0.6f)
-                                )
-                                Text(
-                                    text = uiState.totalSavingsBalance.formatPhp(),
-                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                    color = RicePaper
-                                )
-                            }
-
-                            // Show active goal if exists, otherwise show month's total contribution
-                            val primaryGoal = uiState.activeGoals.firstOrNull()
-                            if (primaryGoal != null) {
-                                Column(horizontalAlignment = Alignment.End) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                                    ) {
-                                        Text(
-                                            text = "GOAL: ${primaryGoal.goal.label.uppercase()}",
-                                            style = MaterialTheme.typography.labelSmall.copy(
-                                                fontWeight = FontWeight.Bold,
-                                                letterSpacing = 1.2.sp
-                                            ),
-                                            color = RicePaper.copy(alpha = 0.6f)
-                                        )
-                                        Icon(
-                                            imageVector = Icons.Outlined.Flag,
-                                            contentDescription = null,
-                                            tint = RicePaper.copy(alpha = 0.6f),
-                                            modifier = Modifier.size(12.dp)
-                                        )
-                                    }
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                    ) {
-                                        Text(
-                                            text = "${((primaryGoal.fraction) * 100).toInt()}% Saved",
-                                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                            color = Color(0xFF34D399)
-                                        )
-                                        TextButton(
-                                            onClick = { contributingToGoal = primaryGoal },
-                                            colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFF34D399)),
-                                            contentPadding = PaddingValues(0.dp),
-                                            modifier = Modifier.height(24.dp)
-                                        ) {
-                                            Text("+ Deposit", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold))
-                                        }
-                                    }
-                                }
-                            } else {
-                                Column(horizontalAlignment = Alignment.End) {
-                                    Text(
-                                        text = "MONTH CONTRIBUTIONS",
-                                        style = MaterialTheme.typography.labelSmall.copy(
-                                            fontWeight = FontWeight.Bold,
-                                            letterSpacing = 1.2.sp
-                                        ),
-                                        color = RicePaper.copy(alpha = 0.6f)
-                                    )
-                                    Text(
-                                        text = "+${uiState.monthlyContributionsSum.formatPhp()}",
-                                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                        color = Color(0xFF34D399)
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            // 1.5 Brand New Dashboard Summary (Pocket Money, Savings, Outflow/Inflow progress)
-            item {
-                DashboardSummary(
-                    piggyBankBalance = uiState.availableBalance,
-                    totalSavingsBalance = uiState.totalSavingsBalance,
-                    totalIncome = uiState.summary.income,
-                    totalExpense = uiState.summary.expense,
-                    modifier = Modifier.fillMaxWidth()
+                BalanceCard(
+                    availableThisMonth = uiState.summary.net,
+                    income = uiState.summary.income,
+                    expense = uiState.summary.expense,
+                    totalSavings = uiState.totalSavingsBalance,
+                    estimatedDaysOfRunway = uiState.estimatedDaysOfRunway,
+                    accountName = uiState.accountName
                 )
             }
 
@@ -471,13 +244,261 @@ fun LedgerScreen(
                 }
             }
 
+
+
+            // 5. Interactive Transaction Log Component with local Search & Horizontal Filters
+            item {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(
+                            text = "Recent activity",
+                            style = MaterialTheme.typography.headlineSmall.copy(
+                                fontFamily = FrauncesFamily,
+                                fontWeight = FontWeight.Bold
+                            ),
+                            color = KapeBrown
+                        )
+                        Text(
+                            text = "${filteredTransactions.size} logs found",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = KapeBrownSoft
+                        )
+                    }
+                    TextButton(onClick = onAddTransactionClick) {
+                        Text(
+                            text = "See all",
+                            color = OceanTeal,
+                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
+                        )
+                    }
+                }
+            }
+
+            // Search Bar Input
+            item {
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    placeholder = { Text("Search transactions...", color = KapeBrownSoft.copy(alpha = 0.5f)) },
+                    leadingIcon = { Text("🔍", modifier = Modifier.padding(start = 12.dp, end = 4.dp)) },
+                    trailingIcon = {
+                        if (searchQuery.isNotEmpty()) {
+                            IconButton(onClick = { searchQuery = "" }) {
+                                Text("✕", color = KapeBrownSoft, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("ledger_search_input"),
+                    shape = IponShapes.SquircleMd,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = Color.White,
+                        unfocusedContainerColor = Color.White,
+                        focusedBorderColor = OceanTeal,
+                        unfocusedBorderColor = KapeBrownSoft.copy(alpha = 0.15f),
+                        cursorColor = OceanTeal
+                    ),
+                    singleLine = true
+                )
+            }
+
+            // Type Filters: All, Expenses, Incomes
+            item {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Type:",
+                        style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                        color = KapeBrownSoft
+                    )
+                    
+                    FilterChip(
+                        selected = selectedTypeFilter == null,
+                        onClick = { selectedTypeFilter = null },
+                        label = { Text("All") },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = OceanTeal,
+                            selectedLabelColor = Color.White,
+                            containerColor = Color.White,
+                            labelColor = KapeBrownSoft
+                        )
+                    )
+                    
+                    FilterChip(
+                        selected = selectedTypeFilter == TransactionType.EXPENSE,
+                        onClick = { selectedTypeFilter = TransactionType.EXPENSE },
+                        label = { Text("Expenses") },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = OceanTeal,
+                            selectedLabelColor = Color.White,
+                            containerColor = Color.White,
+                            labelColor = KapeBrownSoft
+                        )
+                    )
+                    
+                    FilterChip(
+                        selected = selectedTypeFilter == TransactionType.INCOME,
+                        onClick = { selectedTypeFilter = TransactionType.INCOME },
+                        label = { Text("Incomes") },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = OceanTeal,
+                            selectedLabelColor = Color.White,
+                            containerColor = Color.White,
+                            labelColor = KapeBrownSoft
+                        )
+                    )
+                }
+            }
+
+            // Category scrollable filter chips
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(
+                        text = "Category:",
+                        style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                        color = KapeBrownSoft
+                    )
+                    
+                    Box(modifier = Modifier.fillMaxWidth()) {
+                        androidx.compose.foundation.lazy.LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            item {
+                                FilterChip(
+                                    selected = selectedCategoryFilter == null,
+                                    onClick = { selectedCategoryFilter = null },
+                                    label = { Text("All Categories") },
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = OceanTeal,
+                                        selectedLabelColor = Color.White,
+                                        containerColor = Color.White,
+                                        labelColor = KapeBrownSoft
+                                    )
+                                )
+                            }
+                            
+                            items(presentCategories) { cat ->
+                                FilterChip(
+                                    selected = selectedCategoryFilter == cat,
+                                    onClick = { selectedCategoryFilter = cat },
+                                    label = { Text(cat) },
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = OceanTeal,
+                                        selectedLabelColor = Color.White,
+                                        containerColor = Color.White,
+                                        labelColor = KapeBrownSoft
+                                    )
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (uiState.transactions.isEmpty()) {
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(IponShapes.SquircleLg)
+                            .background(WarmCream)
+                            .padding(32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Text("🪙", fontSize = 48.sp)
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Text(
+                                text = "Start fresh from 0!",
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                color = KapeBrown
+                            )
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text(
+                                text = "No logs in your ledger yet. Press the orange '+' button below or '+ Add Entry' to track your very first cash in or out!",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = KapeBrownSoft,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                }
+            } else if (filteredTransactions.isEmpty()) {
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(IponShapes.SquircleLg)
+                            .background(WarmCream)
+                            .padding(32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("🔍", fontSize = 28.sp)
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "No transactions logged matching filters.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = KapeBrownSoft,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                }
+            } else {
+                groupedTransactions.forEach { (title, groupItems) ->
+                    item {
+                        Text(
+                            text = title.uppercase(java.util.Locale.getDefault()),
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 1.2.sp
+                            ),
+                            color = KapeBrownSoft,
+                            modifier = Modifier.padding(top = 16.dp, bottom = 8.dp, start = 4.dp)
+                        )
+                    }
+                    items(groupItems, key = { it.id }) { transaction ->
+                        TransactionRow(
+                            transaction = transaction,
+                            isNewlyAdded = transaction.id == recentlyAddedId,
+                            onClick = { onTransactionClick(transaction.id) },
+                            onDeleteClick = { transactionToDelete = transaction },
+                            hasCardContainer = true
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+                }
+            }
+
+            // Divider or spacing between transactions and supplementary blocks
+            item {
+                Spacer(modifier = Modifier.height(24.dp))
+            }
+
             // 3. Envelope Budget Allocation Card (Tailwind Style)
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = IponShapes.SquircleLg,
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                    colors = CardDefaults.cardColors(containerColor = WarmCream),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Row(
@@ -619,196 +640,6 @@ fun LedgerScreen(
                             modifier = Modifier.weight(1f)
                         )
                     }
-                }
-            }
-
-            // 5. Interactive Transaction Log Component with local Search & Horizontal Filters
-            item {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Text(
-                            text = "Transaction Ledger",
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                            color = KapeBrown
-                        )
-                        Text(
-                            text = "${filteredTransactions.size} logs found",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = KapeBrownSoft
-                        )
-                    }
-                    TextButton(onClick = onAddTransactionClick) {
-                        Text("+ Add Entry", color = OceanTeal, style = MaterialTheme.typography.labelLarge)
-                    }
-                }
-            }
-
-            // Search Bar Input
-            item {
-                OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = { searchQuery = it },
-                    placeholder = { Text("Search transactions...", color = KapeBrownSoft.copy(alpha = 0.5f)) },
-                    leadingIcon = { Text("🔍", modifier = Modifier.padding(start = 12.dp, end = 4.dp)) },
-                    trailingIcon = {
-                        if (searchQuery.isNotEmpty()) {
-                            IconButton(onClick = { searchQuery = "" }) {
-                                Text("✕", color = KapeBrownSoft, fontWeight = FontWeight.Bold)
-                            }
-                        }
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag("ledger_search_input"),
-                    shape = IponShapes.SquircleMd,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = Color.White,
-                        unfocusedContainerColor = Color.White,
-                        focusedBorderColor = OceanTeal,
-                        unfocusedBorderColor = KapeBrownSoft.copy(alpha = 0.15f),
-                        cursorColor = OceanTeal
-                    ),
-                    singleLine = true
-                )
-            }
-
-            // Type Filters: All, Expenses, Incomes
-            item {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Type:",
-                        style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
-                        color = KapeBrownSoft
-                    )
-                    
-                    FilterChip(
-                        selected = selectedTypeFilter == null,
-                        onClick = { selectedTypeFilter = null },
-                        label = { Text("All") },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = OceanTeal,
-                            selectedLabelColor = Color.White,
-                            containerColor = Color.White,
-                            labelColor = KapeBrownSoft
-                        )
-                    )
-                    
-                    FilterChip(
-                        selected = selectedTypeFilter == TransactionType.EXPENSE,
-                        onClick = { selectedTypeFilter = TransactionType.EXPENSE },
-                        label = { Text("Expenses") },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = OceanTeal,
-                            selectedLabelColor = Color.White,
-                            containerColor = Color.White,
-                            labelColor = KapeBrownSoft
-                        )
-                    )
-                    
-                    FilterChip(
-                        selected = selectedTypeFilter == TransactionType.INCOME,
-                        onClick = { selectedTypeFilter = TransactionType.INCOME },
-                        label = { Text("Incomes") },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = OceanTeal,
-                            selectedLabelColor = Color.White,
-                            containerColor = Color.White,
-                            labelColor = KapeBrownSoft
-                        )
-                    )
-                }
-            }
-
-            // Category scrollable filter chips
-            item {
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text(
-                        text = "Category:",
-                        style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
-                        color = KapeBrownSoft
-                    )
-                    
-                    Box(modifier = Modifier.fillMaxWidth()) {
-                        androidx.compose.foundation.lazy.LazyRow(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            item {
-                                FilterChip(
-                                    selected = selectedCategoryFilter == null,
-                                    onClick = { selectedCategoryFilter = null },
-                                    label = { Text("All Categories") },
-                                    colors = FilterChipDefaults.filterChipColors(
-                                        selectedContainerColor = OceanTeal,
-                                        selectedLabelColor = Color.White,
-                                        containerColor = Color.White,
-                                        labelColor = KapeBrownSoft
-                                    )
-                                )
-                            }
-                            
-                            items(presentCategories) { cat ->
-                                FilterChip(
-                                    selected = selectedCategoryFilter == cat,
-                                    onClick = { selectedCategoryFilter = cat },
-                                    label = { Text(cat) },
-                                    colors = FilterChipDefaults.filterChipColors(
-                                        selectedContainerColor = OceanTeal,
-                                        selectedLabelColor = Color.White,
-                                        containerColor = Color.White,
-                                        labelColor = KapeBrownSoft
-                                    )
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            if (filteredTransactions.isEmpty()) {
-                item {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(IponShapes.SquircleLg)
-                            .background(Color.White)
-                            .border(1.dp, HairlineBorder, IponShapes.SquircleLg)
-                            .padding(32.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("🔍", fontSize = 28.sp)
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = "No transactions logged matching filters.",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = KapeBrownSoft,
-                                textAlign = TextAlign.Center
-                            )
-                        }
-                    }
-                }
-            } else {
-                items(filteredTransactions, key = { it.id }) { transaction ->
-                    TransactionRow(
-                        transaction = transaction,
-                        isNewlyAdded = transaction.id == recentlyAddedId,
-                        onClick = { onTransactionClick(transaction.id) },
-                        onDeleteClick = { transactionToDelete = transaction },
-                        modifier = Modifier.padding(bottom = 2.dp)
-                    )
                 }
             }
 

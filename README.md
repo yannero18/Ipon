@@ -20,14 +20,8 @@ You can download the latest version of Ipon directly to your Android device:
 
 ## 📸 Screenshots
 
-*(Add your screenshots here once the UI is finalized! Good examples: Dashboard, Envelopes, Add Transaction, and Insights).*
-
 <p align="center">
-  <img src="link_to_screenshot_1.png" width="200"/>
-  &nbsp;&nbsp;&nbsp;
-  <img src="link_to_screenshot_2.png" width="200"/>
-  &nbsp;&nbsp;&nbsp;
-  <img src="link_to_screenshot_3.png" width="200"/>
+  <img src="assets/image_screenshot.png" alt="Ipon App Screenshots" width="800">
 </p>
 
 ---

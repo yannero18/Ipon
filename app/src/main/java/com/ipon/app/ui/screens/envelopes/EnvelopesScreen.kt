@@ -33,7 +33,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ipon.app.data.model.EnvelopeProgress
@@ -41,12 +45,15 @@ import com.ipon.app.data.model.ExpenseCategory
 import com.ipon.app.di.IponViewModelFactory
 import com.ipon.app.ui.components.CategoryLabel
 import com.ipon.app.ui.theme.IponShapes
+import com.ipon.app.ui.theme.OrganicSquircleShape
 import com.ipon.app.ui.theme.JeepneyOrange
 import com.ipon.app.ui.theme.KapeBrown
 import com.ipon.app.ui.theme.KapeBrownSoft
 import com.ipon.app.ui.theme.OceanTeal
 import com.ipon.app.ui.theme.RicePaper
 import com.ipon.app.ui.theme.RicePaperDeep
+import com.ipon.app.ui.theme.WarmCream
+import com.ipon.app.ui.theme.HairlineBorder
 import com.ipon.app.ui.theme.TabularNumberStyle
 import com.ipon.app.ui.theme.Terracotta
 import com.ipon.app.util.Money
@@ -71,7 +78,7 @@ fun EnvelopesScreen(viewModelFactory: IponViewModelFactory) {
     val dayOfMonth = calendar.get(Calendar.DAY_OF_MONTH)
     val daysInMonth = calendar.getActualMaximum(Calendar.DAY_OF_MONTH)
 
-    Scaffold(containerColor = RicePaper) { padding ->
+    Scaffold(containerColor = Color.Transparent) { padding ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -80,15 +87,10 @@ fun EnvelopesScreen(viewModelFactory: IponViewModelFactory) {
         ) {
             item {
                 Text(
-                    text = "Envelopes",
-                    style = MaterialTheme.typography.headlineMedium,
-                    modifier = Modifier.padding(bottom = 4.dp)
-                )
-                Text(
-                    text = "Monthly spending caps by category",
-                    style = MaterialTheme.typography.bodyMedium,
+                    text = "Monthly spending caps",
+                    style = MaterialTheme.typography.labelSmall,
                     color = KapeBrownSoft,
-                    modifier = Modifier.padding(bottom = 20.dp)
+                    modifier = Modifier.padding(bottom = 16.dp)
                 )
             }
 
@@ -137,15 +139,23 @@ fun EnvelopesScreen(viewModelFactory: IponViewModelFactory) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = 8.dp, bottom = 80.dp)
-                        .clip(IponShapes.SquircleSm)
-                        .background(RicePaperDeep)
+                        .clip(OrganicSquircleShape)
                         .clickable { showAddDialog = true }
-                        .padding(vertical = 14.dp),
+                        .drawBehind {
+                            val strokeWidth = 1.2.dp.toPx()
+                            val dashPathEffect = PathEffect.dashPathEffect(floatArrayOf(12f, 12f), 0f)
+                            drawRoundRect(
+                                color = KapeBrown,
+                                style = Stroke(width = strokeWidth, pathEffect = dashPathEffect),
+                                cornerRadius = androidx.compose.ui.geometry.CornerRadius(24.dp.toPx())
+                            )
+                        }
+                        .padding(vertical = 16.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = "+ Add envelope",
-                        style = MaterialTheme.typography.bodyLarge,
+                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
                         color = OceanTeal
                     )
                 }
@@ -208,16 +218,23 @@ private fun EnvelopeCard(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .clip(IponShapes.SquircleLg)
-            .background(Color.White)
+            .clip(OrganicSquircleShape)
+            .background(WarmCream)
+            .border(1.dp, HairlineBorder, OrganicSquircleShape)
             .clickable(onClick = onClick)
             .padding(16.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            CategoryLabel(category = envelope.category, customIcon = envelope.customIcon, textColor = KapeBrown)
+            CategoryLabel(
+                category = envelope.category,
+                customIcon = envelope.customIcon,
+                textColor = KapeBrown,
+                hasBackground = true
+            )
             Text(
                 text = "${envelope.spent.formatPhp()} / ${envelope.cap.formatPhp()}",
                 style = MaterialTheme.typography.bodyMedium.merge(TabularNumberStyle),
@@ -245,21 +262,21 @@ private fun EnvelopeCard(
         if (envelope.isOverBudget) {
             Text(
                 text = "Over by ${(-envelope.remaining).formatPhp()}",
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodyMedium.merge(TabularNumberStyle),
                 color = Terracotta,
                 modifier = Modifier.padding(top = 6.dp)
             )
         } else if (showsPaceWarning) {
             Text(
                 text = "At this pace, projected to reach ${projection.formatPhp()} by month's end",
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodyMedium.merge(TabularNumberStyle),
                 color = Terracotta,
                 modifier = Modifier.padding(top = 6.dp)
             )
         } else {
             Text(
-                text = "${envelope.remaining.formatPhp()} left",
-                style = MaterialTheme.typography.bodyMedium,
+                text = "${envelope.remaining.formatPhp()} remaining this month",
+                style = MaterialTheme.typography.bodyMedium.merge(TabularNumberStyle),
                 color = KapeBrownSoft,
                 modifier = Modifier.padding(top = 6.dp)
             )

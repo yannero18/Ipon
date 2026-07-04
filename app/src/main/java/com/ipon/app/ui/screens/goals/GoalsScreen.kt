@@ -45,28 +45,20 @@ fun GoalsScreen(viewModelFactory: IponViewModelFactory) {
     var managingGoal by remember { mutableStateOf<Goal?>(null) }
     var editingGoal by remember { mutableStateOf<Goal?>(null) }
 
-    Scaffold(containerColor = RicePaper) { padding ->
+    Scaffold(containerColor = Color.Transparent) { padding ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
                 .padding(horizontal = 20.dp, vertical = 16.dp)
         ) {
-            // 1. Screen Title
             item {
-                Column(modifier = Modifier.padding(bottom = 20.dp)) {
-                    Text(
-                        text = "SAVINGS FLOW",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = KapeBrownSoft,
-                        letterSpacing = 1.5.sp
-                    )
-                    Text(
-                        text = "Ipon Goals",
-                        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-                        color = KapeBrown
-                    )
-                }
+                Text(
+                    text = "Savings targets & milestones",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = KapeBrownSoft,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
             }
 
             // 2. Beautiful Savings Overview Hero Card
@@ -81,7 +73,7 @@ fun GoalsScreen(viewModelFactory: IponViewModelFactory) {
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(bottom = 20.dp),
-                        shape = IponShapes.SquircleLg,
+                        shape = OrganicSquircleShape,
                         colors = CardDefaults.cardColors(containerColor = OceanTeal),
                         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                     ) {
@@ -162,9 +154,9 @@ fun GoalsScreen(viewModelFactory: IponViewModelFactory) {
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 12.dp)
-                            .border(1.dp, HairlineBorder, IponShapes.SquircleLg),
-                        shape = IponShapes.SquircleLg,
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                            .border(1.dp, HairlineBorder, OrganicSquircleShape),
+                        shape = OrganicSquircleShape,
+                        colors = CardDefaults.cardColors(containerColor = WarmCream),
                         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                     ) {
                         Column(
@@ -290,9 +282,9 @@ private fun GoalCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .border(1.dp, HairlineBorder, IponShapes.SquircleLg),
-        shape = IponShapes.SquircleLg,
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+            .border(1.dp, HairlineBorder, OrganicSquircleShape),
+        shape = OrganicSquircleShape,
+        colors = CardDefaults.cardColors(containerColor = WarmCream),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {

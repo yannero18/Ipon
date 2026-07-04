@@ -41,6 +41,7 @@ import com.ipon.app.di.IponViewModelFactory
 import com.ipon.app.ui.components.CategoryLabel
 import com.ipon.app.ui.theme.HairlineBorder
 import com.ipon.app.ui.theme.IponShapes
+import com.ipon.app.ui.theme.OrganicSquircleShape
 import com.ipon.app.ui.theme.JeepneyOrange
 import com.ipon.app.ui.theme.KapeBrown
 import com.ipon.app.ui.theme.KapeBrownSoft
@@ -48,6 +49,7 @@ import com.ipon.app.ui.theme.OceanTeal
 import com.ipon.app.ui.theme.RicePaper
 import com.ipon.app.ui.theme.TabularNumberStyle
 import com.ipon.app.ui.theme.Terracotta
+import com.ipon.app.ui.theme.WarmCream
 import java.util.Calendar
 
 @Composable
@@ -58,7 +60,7 @@ fun RecurringScreen(
     val viewModel: RecurringViewModel = viewModel(factory = viewModelFactory)
     val uiState by viewModel.uiState.collectAsState()
 
-    Scaffold(containerColor = RicePaper) { padding ->
+    Scaffold(containerColor = Color.Transparent) { padding ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -67,15 +69,10 @@ fun RecurringScreen(
         ) {
             item {
                 Text(
-                    text = "Recurring",
-                    style = MaterialTheme.typography.headlineMedium,
-                    modifier = Modifier.padding(bottom = 4.dp)
-                )
-                Text(
-                    text = "Nothing logs itself \u2014 you confirm each one when it's due.",
-                    style = MaterialTheme.typography.bodyMedium,
+                    text = "Nothing logs itself — you confirm each one when it's due.",
+                    style = MaterialTheme.typography.labelSmall,
                     color = KapeBrownSoft,
-                    modifier = Modifier.padding(bottom = 20.dp)
+                    modifier = Modifier.padding(bottom = 16.dp)
                 )
             }
 
@@ -188,9 +185,9 @@ private fun DetectedPatternCard(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .clip(IponShapes.SquircleLg)
-            .background(Color.White)
-            .border(1.dp, OceanTeal.copy(alpha = 0.3f), IponShapes.SquircleLg)
+            .clip(OrganicSquircleShape)
+            .background(WarmCream)
+            .border(1.dp, OceanTeal.copy(alpha = 0.3f), OrganicSquircleShape)
             .padding(16.dp)
     ) {
         Row(
@@ -238,9 +235,9 @@ private fun DueTemplateCard(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .clip(IponShapes.SquircleLg)
-            .background(Color.White)
-            .border(1.dp, Terracotta.copy(alpha = 0.4f), IponShapes.SquircleLg)
+            .clip(OrganicSquircleShape)
+            .background(WarmCream)
+            .border(1.dp, Terracotta.copy(alpha = 0.4f), OrganicSquircleShape)
             .padding(16.dp)
     ) {
         Row(
@@ -292,8 +289,7 @@ private fun TemplateRow(
         modifier = modifier
             .fillMaxWidth()
             .clip(IponShapes.SquircleLg)
-            .background(Color.White)
-            .border(1.dp, HairlineBorder, IponShapes.SquircleLg)
+            .background(WarmCream)
             .clickable { showActions = !showActions }
             .padding(14.dp)
     ) {

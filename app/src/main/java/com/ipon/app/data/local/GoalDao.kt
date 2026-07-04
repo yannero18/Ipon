@@ -75,4 +75,7 @@ interface GoalDao {
         """
     )
     fun observeContributionsSumBetween(startEpochMillis: Long, endEpochMillis: Long): Flow<Long>
+
+    @Query("SELECT * FROM goals ORDER BY createdAtEpochMillis ASC")
+    suspend fun getAllGoalsEver(): List<GoalEntity>
 }

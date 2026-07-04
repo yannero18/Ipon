@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -28,7 +29,10 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             IponTheme {
-                Surface(modifier = Modifier.fillMaxSize()) {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
                     // Read once per process start, not on every
                     // recomposition -- onboarding's completed state is only
                     // ever written from the screen below itself, never from
@@ -40,7 +44,8 @@ class MainActivity : ComponentActivity() {
                         IponNavHost(viewModelFactory = viewModelFactory)
                     } else {
                         OnboardingScreen(
-                            onFinished = {
+                            onFinished = { name ->
+                                onboardingPreferences.saveAccountName(name)
                                 onboardingPreferences.markOnboardingSeen()
                                 hasSeenOnboarding = true
                             }

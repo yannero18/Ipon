@@ -15,6 +15,7 @@ import com.ipon.app.data.repository.PeriodSummary
 import com.ipon.app.data.repository.RecurringTemplateRepository
 import com.ipon.app.data.repository.TransactionRepository
 import com.ipon.app.util.Money
+import com.ipon.app.util.OnboardingPreferences
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -26,6 +27,7 @@ import java.util.UUID
 
 sealed interface LedgerUiState {
     val isLoading: Boolean
+    val accountName: String
     val transactions: List<Transaction>
     val summary: PeriodSummary
     val estimatedDaysOfRunway: Int?
@@ -40,6 +42,7 @@ sealed interface LedgerUiState {
 
     object Loading : LedgerUiState {
         override val isLoading: Boolean = true
+        override val accountName: String = "Yannero"
         override val transactions: List<Transaction> = emptyList()
         override val summary: PeriodSummary = PeriodSummary(Money.ZERO, Money.ZERO)
         override val estimatedDaysOfRunway: Int? = null
@@ -54,6 +57,7 @@ sealed interface LedgerUiState {
     }
 
     data class Success(
+        override val accountName: String = "Yannero",
         override val transactions: List<Transaction> = emptyList(),
         override val summary: PeriodSummary = PeriodSummary(Money.ZERO, Money.ZERO),
         override val estimatedDaysOfRunway: Int? = null,
@@ -70,6 +74,7 @@ sealed interface LedgerUiState {
     }
 
     data class Empty(
+        override val accountName: String = "Yannero",
         override val totalSavingsBalance: Money = Money.ZERO,
         override val activeGoals: List<GoalProgress> = emptyList(),
         override val monthlyContributionsSum: Money = Money.ZERO,
@@ -90,7 +95,8 @@ class LedgerViewModel(
     private val transactionRepository: TransactionRepository,
     private val envelopeRepository: EnvelopeRepository,
     private val goalRepository: GoalRepository,
-    private val recurringTemplateRepository: RecurringTemplateRepository
+    private val recurringTemplateRepository: RecurringTemplateRepository,
+    private val onboardingPreferences: OnboardingPreferences
 ) : ViewModel() {
 
     private val currentPeriod = currentYearMonth()
@@ -103,6 +109,7 @@ class LedgerViewModel(
         goalRepository.observeProgress(),
         goalRepository.observeAllContributions()
     ) { transactions, summary, envelopes, goals, contributions ->
+        val name = onboardingPreferences.getAccountName()
         val dayOfMonth = Calendar.getInstance().get(Calendar.DAY_OF_MONTH)
         val averageDailySpend = if (dayOfMonth > 0) {
             Money.ofMinorUnits(summary.expense.minorUnits / dayOfMonth)
@@ -120,10 +127,10 @@ class LedgerViewModel(
                 .sumOf { it.amount.minorUnits }
         )
 
-        // Calculate available balance (unallocated = income - expense - sum of envelope caps)
         val totalEnvelopeCapsMinor = envelopes.sumOf { it.cap.minorUnits }
+        // Calculate available balance (net = income - expense) from database
         val available = Money.ofMinorUnits(
-            (summary.income.minorUnits - summary.expense.minorUnits - totalEnvelopeCapsMinor).coerceAtLeast(0L)
+            summary.income.minorUnits - summary.expense.minorUnits
         )
         
         val remainingBudgetMinor = totalEnvelopeCapsMinor - summary.expense.minorUnits
@@ -132,12 +139,14 @@ class LedgerViewModel(
 
         if (transactions.isEmpty() && envelopes.isEmpty()) {
             LedgerUiState.Empty(
+                accountName = name,
                 totalSavingsBalance = totalSavings,
                 activeGoals = goals,
                 monthlyContributionsSum = monthlyContributions
             )
         } else {
             LedgerUiState.Success(
+                accountName = name,
                 transactions = transactions,
                 summary = summary,
                 estimatedDaysOfRunway = if (dayOfMonth >= 3) {

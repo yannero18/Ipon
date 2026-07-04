@@ -3,42 +3,33 @@ package com.ipon.app.ui.theme
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.unit.dp
 
+val OrganicSquircleShape = RoundedCornerShape(24.dp)
+
 /**
- * Section 4: "Fluid Asymmetry" -- organic, asymmetrical squircle profiles
- * rather than uniform rounding. The proposal's example is
- * (topStart = 24.dp, topEnd = 8.dp); this extends that same diagonal
- * asymmetry to all four corners so the shape reads as one deliberate
- * gesture rather than two rounded corners and two square ones.
- *
- * Compose's RoundedCornerShape resolves topStart/topEnd to physical
- * left/right based on layout direction, so this also correctly mirrors
- * under RTL locales without any extra handling.
+ * Modern Editorial Shape System
+ * Aligned with the high-fidelity HTML spec using clean, symmetric curves
+ * for a premium and cohesive look.
  */
 object IponShapes {
-    /** Primary container shape: cards, the balance card, transaction rows. */
-    val SquircleLg = RoundedCornerShape(
+    /** Primary container shape: cards, balance card, large dialogues. */
+    val SquircleLg = RoundedCornerShape(24.dp)
+
+    val OrganicSquircleShape = SquircleLg
+
+    /** Smaller version for icon chips, badges, emoji container backgrounds. */
+    val SquircleSm = RoundedCornerShape(12.dp)
+
+    /** Medium version for transaction rows, list elements, action containers. */
+    val SquircleMd = RoundedCornerShape(16.dp)
+
+    /** Standard action and navigation elements. */
+    val FabCircle = RoundedCornerShape(50)
+
+    /** Precise asymmetric squircle shape per the design specification. */
+    val AsymmetricSquircle = RoundedCornerShape(
         topStart = 24.dp,
         topEnd = 8.dp,
         bottomEnd = 24.dp,
         bottomStart = 8.dp
     )
-
-    /** Smaller version for icon chips, badges, small tappable elements. */
-    val SquircleSm = RoundedCornerShape(
-        topStart = 14.dp,
-        topEnd = 6.dp,
-        bottomEnd = 14.dp,
-        bottomStart = 6.dp
-    )
-
-    /** Medium version for list items, action rows, and smaller cards. */
-    val SquircleMd = RoundedCornerShape(
-        topStart = 18.dp,
-        topEnd = 6.dp,
-        bottomEnd = 18.dp,
-        bottomStart = 6.dp
-    )
-
-    /** The transaction coin FAB stays a true circle -- it represents a coin, not a card. */
-    val FabCircle = RoundedCornerShape(50)
 }

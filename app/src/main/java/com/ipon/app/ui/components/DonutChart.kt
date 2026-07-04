@@ -44,18 +44,18 @@ import kotlin.math.sqrt
 
 // Vibrant Fintech-ready Palette corresponding to category colors
 fun getEnvelopeColor(category: ExpenseCategory): Color = when (category) {
-    ExpenseCategory.TRANSPO -> Color(0xFF0284C7)      // Sky Blue 600
-    ExpenseCategory.FOOD -> Color(0xFFD97706)         // Orange/Amber 600
-    ExpenseCategory.BILLS -> Color(0xFFEF4444)        // Red 500
-    ExpenseCategory.GROCERIES -> Color(0xFF059669)     // Emerald 600
-    ExpenseCategory.GOVERNMENT -> Color(0xFF7C3AED)    // Purple 600
-    ExpenseCategory.SHOPPING -> Color(0xFFDB2777)      // Pink 600
-    ExpenseCategory.HEALTH -> Color(0xFF0D9488)        // Teal 600
-    ExpenseCategory.ENTERTAINMENT -> Color(0xFF8B5CF6)  // Violet 500
-    ExpenseCategory.EDUCATION -> Color(0xFF6366F1)      // Indigo 500
-    ExpenseCategory.UTANG -> Color(0xFFB45309)          // Amber/Brown 700
-    ExpenseCategory.PADALA -> Color(0xFFF43F5E)         // Rose 500
-    ExpenseCategory.OTHER -> Color(0xFF64748B)          // Slate 500
+    ExpenseCategory.TRANSPO -> Color(0xFF4C8D9E)      // Muted Ocean Teal/Blue
+    ExpenseCategory.FOOD -> Color(0xFFF28C38)         // Jeepney Orange
+    ExpenseCategory.BILLS -> Color(0xFFD1664F)        // Terracotta
+    ExpenseCategory.GROCERIES -> Color(0xFF1D5D6B)     // Ocean Teal
+    ExpenseCategory.GOVERNMENT -> Color(0xFF6B584E)    // Muted Kape
+    ExpenseCategory.SHOPPING -> Color(0xFFE6809D)      // Soft Blush
+    ExpenseCategory.HEALTH -> Color(0xFF4CA095)        // Muted Mint
+    ExpenseCategory.ENTERTAINMENT -> Color(0xFF907FA4)  // Muted Mauve
+    ExpenseCategory.EDUCATION -> Color(0xFF74829E)      // Muted Denim
+    ExpenseCategory.UTANG -> Color(0xFF8C6D58)          // Soft Clay
+    ExpenseCategory.PADALA -> Color(0xFFDCA4A4)         // Dusky Rose
+    ExpenseCategory.OTHER -> Color(0xFF9C8E85)          // Taupe
 }
 
 @Composable
