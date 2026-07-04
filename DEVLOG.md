@@ -208,3 +208,13 @@ User picked four to build: auto-suggested envelope caps, 50/30/20, zero-based bu
 4. **Debt payoff tracker**, the most structurally distinct addition: new `DebtEntity`/`DebtPaymentEntity` tables (schema v7, 9 entity tables total) mirroring the Goal/GoalContribution append-only pattern for the same reason -- remaining balance is always derived (`originalBalance - SUM(payments)`), never a cached, driftable column. Supports both snowball (smallest balance first, for momentum) and avalanche (highest interest first, mathematically optimal) payoff ordering via a pure sorting function, `List<DebtProgress>.orderedForPayoff(method)` -- this doesn't simulate a payment schedule or compute a payoff date, it only answers "which debt should extra money go to first," which is the actual decision these methods exist to make.
 
 As of this entry: 86 Kotlin files, schema at version 7, 9 entity tables. **Not yet rebuilt/retested** since this batch -- the largest single addition yet (4 new screens' worth of wiring, 2 new DB tables, a new dynamic-arity `combine()` usage, a new sealed PlanTab case). Worth a real build before adding anything further.
+
+---
+
+### Phase 10.5 — Merging, Stabilizing, and Data Safety
+After successfully building the massive Phase 10 feature set (Zero-Based Budgeting, Debt Tracker, Spending Velocity), we hit a critical stabilization phase:
+1. **The SQLite Crash:** `createFromAsset` with a plain text `.sql` file was crashing the app on startup. We abandoned the compiled binary approach entirely and reverted to standard Room generation, pushing the schema safely to Version 11.
+2. **CSV Export Fix:** Discovered a massive data-loss gap in `ExportRepository.kt`. The Phase 10 tables (`debts`, `debt_payments`, `reports`) and some older tables (`goal_contributions`, `merchant_category_memory`) were missing from the export. We wrote the missing DAO queries (`getAllDebtsEver()`, etc.) and wired them into the CSV builder to guarantee 100% data safety. 
+3. **Cleaned up Git:** Accidentally staged binaries (`ipon_schema.db`, `.zip` files) during the merge. Used `git rm --cached` and `git commit --amend` to scrub the binaries from Git's memory and force-pushed a clean tree to GitHub.
+
+*Result: Phase 10 is officially closed. The app is compiling, perfectly stable, and data-safe.*
