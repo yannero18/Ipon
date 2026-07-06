@@ -77,7 +77,7 @@ import com.ipon.app.ui.theme.*
  * it has grown real content (privacy statement, data management) that
  * deserves visibility rather than being tucked away.
  */
-private sealed class IponDestination(val route: String, val label: String) {
+sealed class IponDestination(val route: String, val label: String) {
     data object Ledger : IponDestination("ledger", "Ledger")
     data object Plan : IponDestination("plan", "Plan")
     data object Insights : IponDestination("insights", "Insights")

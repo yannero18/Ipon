@@ -2,54 +2,40 @@ package com.ipon.app.ui.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.googlefonts.Font
-import androidx.compose.ui.text.googlefonts.GoogleFont
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.Color
 import com.ipon.app.R
 
-// Set up Google Font Provider
-val provider = GoogleFont.Provider(
-    providerAuthority = "com.google.android.gms.fonts",
-    providerPackage = "com.google.android.gms",
-    certificates = R.array.com_google_android_gms_fonts_certs
-)
-
-// Declare Google Font Names
-val FrauncesFont = GoogleFont("Fraunces")
-val InterFont = GoogleFont("Inter")
-val SpaceGroteskFont = GoogleFont("Space Grotesk")
-val JetBrainsMonoFont = GoogleFont("JetBrains Mono")
-
-// Define Font Families with Downloadable Fonts and Fallbacks
+// Define Font Families mapping directly to your local res/font/.ttf files
 val FrauncesFamily = FontFamily(
-    Font(googleFont = FrauncesFont, fontProvider = provider, weight = FontWeight.Normal),
-    Font(googleFont = FrauncesFont, fontProvider = provider, weight = FontWeight.Medium),
-    Font(googleFont = FrauncesFont, fontProvider = provider, weight = FontWeight.SemiBold),
-    Font(googleFont = FrauncesFont, fontProvider = provider, weight = FontWeight.Bold)
+    Font(R.font.fraunces, FontWeight.Normal),
+    Font(R.font.fraunces, FontWeight.Medium),
+    Font(R.font.fraunces, FontWeight.SemiBold),
+    Font(R.font.fraunces, FontWeight.Bold)
 )
 
 val InterFamily = FontFamily(
-    Font(googleFont = InterFont, fontProvider = provider, weight = FontWeight.Light),
-    Font(googleFont = InterFont, fontProvider = provider, weight = FontWeight.Normal),
-    Font(googleFont = InterFont, fontProvider = provider, weight = FontWeight.Medium),
-    Font(googleFont = InterFont, fontProvider = provider, weight = FontWeight.SemiBold),
-    Font(googleFont = InterFont, fontProvider = provider, weight = FontWeight.Bold)
+    Font(R.font.inter, FontWeight.Light),
+    Font(R.font.inter, FontWeight.Normal),
+    Font(R.font.inter, FontWeight.Medium),
+    Font(R.font.inter, FontWeight.SemiBold),
+    Font(R.font.inter, FontWeight.Bold)
 )
 
 val SpaceGroteskFamily = FontFamily(
-    Font(googleFont = SpaceGroteskFont, fontProvider = provider, weight = FontWeight.Normal),
-    Font(googleFont = SpaceGroteskFont, fontProvider = provider, weight = FontWeight.Medium),
-    Font(googleFont = SpaceGroteskFont, fontProvider = provider, weight = FontWeight.Bold)
+    Font(R.font.space_grotesk, FontWeight.Normal),
+    Font(R.font.space_grotesk, FontWeight.Medium),
+    Font(R.font.space_grotesk, FontWeight.Bold)
 )
 
 val GeometricSansFamily = SpaceGroteskFamily
 
 val MonoFamily = FontFamily(
-    Font(googleFont = JetBrainsMonoFont, fontProvider = provider, weight = FontWeight.Normal),
-    Font(googleFont = JetBrainsMonoFont, fontProvider = provider, weight = FontWeight.Medium)
+    Font(R.font.jetbrains_mono, FontWeight.Normal),
+    Font(R.font.jetbrains_mono, FontWeight.Medium)
 )
 
 val TabularNumberStyle = TextStyle(

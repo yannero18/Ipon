@@ -41,9 +41,9 @@ This project is governed by strict technical and design rules to protect your da
 ## ✨ Features
 
 * **Philippine-Aware Categorization:** Built-in categories that reflect real local spending and income (e.g., *Sweldo, OFW Remittances, Sari-sari income, Abuloy, Government / Dues*).
-* **Budgeting Frameworks:** 
-  * **Envelope Budgeting:** Monthly spending caps per expense category, with auto-suggested caps based on your 3-month trailing average.
+* **Budgeting Frameworks:** * **Envelope Budgeting:** Monthly spending caps per expense category, with auto-suggested caps based on your 3-month trailing average.
   * **Zero-Based Budgeting & 50/30/20:** Map your active income against envelopes and recurring expenses so every peso has a job.
+* **Payday Safe-Spend Pacing:** Set your exact paydays (e.g., 15th and 30th) to automatically calculate your safe daily spend limit based on your available balance.
 * **Debt Payoff Tracker:** Optimize debt clearing using either the Snowball (momentum) or Avalanche (mathematically optimal) methods.
 * **Smart Console:** Pace-based envelope runway projections, recurring pattern detection, and one-tap sweeps of unspent envelope budgets directly to savings goals.
 * **Append-Only Goals:** Savings targets with a dedicated contribution log, showing real money moved rather than an arbitrary progress bar.
@@ -62,6 +62,7 @@ Ipon rejects the generic, glossy, 3D-heavy aesthetics of standard finance apps i
 * **Action:** Jeepney Orange (`#F28C38`) — reserved *strictly* for action triggers and primary buttons.
 * **Alerts:** Terracotta (`#D1664F`) — reserved *strictly* for alerts, over-budget warnings, and destructive actions.
 * **Geometry:** Organic, slightly asymmetric "squircle" shapes, avoiding clinical, perfectly rounded corners. 
+* **Offline Typography:** Bundled variable fonts (`Fraunces` and `Inter`) guarantee a high-end, tabular-serif editorial look without requiring Google Play Services or network fetches.
 * **Haptics & Audio:** Custom synthesizer "coin drop" feedback built directly into the app's event layer for a tactile, physical feel.
 
 ---

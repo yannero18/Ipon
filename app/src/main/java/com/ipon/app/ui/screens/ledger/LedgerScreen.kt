@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.ArrowDownward
 import androidx.compose.material.icons.outlined.ArrowUpward
@@ -74,6 +75,9 @@ fun LedgerScreen(
     var selectedTypeFilter by remember { mutableStateOf<TransactionType?>(null) }
     var selectedCategoryFilter by remember { mutableStateOf<String?>(null) }
     var transactionToDelete by remember { mutableStateOf<Transaction?>(null) }
+
+    var showPaydayDialog by remember { mutableStateOf(false) }
+    var paydaysInput by remember { mutableStateOf("") }
 
     val filteredTransactions = remember(uiState.transactions, searchQuery, selectedTypeFilter, selectedCategoryFilter) {
         uiState.transactions.filter { tx ->
@@ -172,18 +176,18 @@ fun LedgerScreen(
                             color = KapeBrown
                         )
                         
-                        // Lookbook aesthetic option slot on the top-right corner
+                        // The Clean 3-Dots Menu from the Mockup!
                         IconButton(
-                            onClick = { /* Action placeholder */ },
-                            modifier = Modifier
-                                .size(40.dp)
-                                .border(1.dp, HairlineBorder, CircleShape)
+                            onClick = { 
+                                paydaysInput = uiState.currentPaydays.joinToString(", ")
+                                showPaydayDialog = true 
+                            },
+                            modifier = Modifier.size(28.dp)
                         ) {
-                            Text(
-                                text = "•••",
-                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
-                                color = KapeBrown,
-                                modifier = Modifier.padding(bottom = 4.dp) // Align vertically
+                            Icon(
+                                imageVector = Icons.Default.MoreHoriz,
+                                contentDescription = "Payday Settings",
+                                tint = KapeBrown
                             )
                         }
                     }
@@ -198,7 +202,9 @@ fun LedgerScreen(
                     expense = uiState.summary.expense,
                     totalSavings = uiState.totalSavingsBalance,
                     estimatedDaysOfRunway = uiState.estimatedDaysOfRunway,
-                    accountName = uiState.accountName
+                    accountName = uiState.accountName,
+                    daysUntilPayday = uiState.daysUntilPayday,
+                    safeDailySpend = uiState.safeDailySpend
                 )
             }
 
@@ -243,8 +249,6 @@ fun LedgerScreen(
                     }
                 }
             }
-
-
 
             // 5. Interactive Transaction Log Component with local Search & Horizontal Filters
             item {
@@ -391,10 +395,21 @@ fun LedgerScreen(
                             }
                             
                             items(presentCategories) { cat ->
+                                val categoryEnum = ExpenseCategory.entries.find { it.displayName == cat } 
+                                    ?: IncomeCategory.entries.find { it.displayName == cat }
+
                                 FilterChip(
                                     selected = selectedCategoryFilter == cat,
                                     onClick = { selectedCategoryFilter = cat },
-                                    label = { Text(cat) },
+                                    label = { 
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            if (categoryEnum != null) {
+                                                Text(categoryEnum.emoji, fontSize = 14.sp)
+                                                Spacer(modifier = Modifier.width(4.dp))
+                                            }
+                                            Text(cat)
+                                        }
+                                    },
                                     colors = FilterChipDefaults.filterChipColors(
                                         selectedContainerColor = OceanTeal,
                                         selectedLabelColor = Color.White,
@@ -604,21 +619,21 @@ fun LedgerScreen(
                     ) {
                         QuickActionCircleButton(
                             label = "Deposit",
-                            icon = Icons.Outlined.ArrowDownward,
+                            emoji = "📥",
                             bgColor = RicePaperDeep,
                             onClick = { showQuickDepositDialog = true },
                             modifier = Modifier.weight(1f)
                         )
                         QuickActionCircleButton(
                             label = "Withdraw",
-                            icon = Icons.Outlined.ArrowUpward,
+                            emoji = "💸",
                             bgColor = RicePaperDeep,
                             onClick = { showQuickWithdrawalDialog = true },
                             modifier = Modifier.weight(1f)
                         )
                         QuickActionCircleButton(
                             label = "Goal Save",
-                            icon = Icons.Outlined.StarBorder,
+                            emoji = "🌟",
                             bgColor = RicePaperDeep,
                             onClick = {
                                 val primary = uiState.activeGoals.firstOrNull()
@@ -632,7 +647,7 @@ fun LedgerScreen(
                         )
                         QuickActionCircleButton(
                             label = "Budget",
-                            icon = Icons.Outlined.Folder,
+                            emoji = "💼",
                             bgColor = RicePaperDeep,
                             onClick = {
                                 editingEnvelopeCategory = ExpenseCategory.BILLS
@@ -698,12 +713,7 @@ fun LedgerScreen(
                                 onClick = { selectedCategory = category },
                                 label = {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Icon(
-                                            imageVector = category.icon(),
-                                            contentDescription = null,
-                                            tint = if (selectedCategory == category) OceanTeal else KapeBrownSoft,
-                                            modifier = Modifier.size(16.dp)
-                                        )
+                                        Text(category.emoji, fontSize = 16.sp)
                                         Spacer(modifier = Modifier.width(4.dp))
                                         Text(category.displayName)
                                     }
@@ -796,12 +806,7 @@ fun LedgerScreen(
                                 onClick = { selectedCategory = category },
                                 label = {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Icon(
-                                            imageVector = category.icon(),
-                                            contentDescription = null,
-                                            tint = if (selectedCategory == category) OceanTeal else KapeBrownSoft,
-                                            modifier = Modifier.size(16.dp)
-                                        )
+                                        Text(category.emoji, fontSize = 16.sp)
                                         Spacer(modifier = Modifier.width(4.dp))
                                         Text(category.displayName)
                                     }
@@ -1021,12 +1026,48 @@ fun LedgerScreen(
             shape = IponShapes.SquircleLg
         )
     }
+    
+    // 7. NEW PAYDAY SCHEDULE SETTINGS DIALOG
+    if (showPaydayDialog) {
+        AlertDialog(
+            onDismissRequest = { showPaydayDialog = false },
+            title = { Text("Set Payday Schedule", color = KapeBrown, fontWeight = FontWeight.Bold) },
+            text = {
+                Column {
+                    Text("Enter the days of the month you get paid, separated by commas.", style = MaterialTheme.typography.bodyMedium, color = KapeBrownSoft)
+                    Spacer(modifier = Modifier.height(12.dp))
+                    OutlinedTextField(
+                        value = paydaysInput,
+                        onValueChange = { paydaysInput = it },
+                        label = { Text("Paydays") },
+                        placeholder = { Text("e.g. 15, 30") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    val days = paydaysInput.split(",").mapNotNull { it.trim().toIntOrNull() }.filter { it in 1..31 }
+                    if (days.isNotEmpty()) {
+                        viewModel.updatePaydays(days)
+                    }
+                    showPaydayDialog = false
+                }) {
+                    Text("Save", color = OceanTeal, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showPaydayDialog = false }) { Text("Cancel", color = KapeBrownSoft) }
+            },
+            containerColor = RicePaper
+        )
+    }
 }
 
 @Composable
 private fun QuickActionCircleButton(
     label: String,
-    icon: ImageVector,
+    emoji: String,
     bgColor: Color,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
@@ -1046,11 +1087,9 @@ private fun QuickActionCircleButton(
                 .border(1.dp, HairlineBorder, IponShapes.SquircleMd),
             contentAlignment = Alignment.Center
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = label,
-                tint = OceanTeal,
-                modifier = Modifier.size(22.dp)
+            Text(
+                text = emoji,
+                fontSize = 24.sp
             )
         }
         Spacer(modifier = Modifier.height(8.dp))
@@ -1087,7 +1126,7 @@ private fun EnvelopeAllocationRow(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
-            // Category Icon inside squircle chip
+            // Category Emoji inside squircle chip
             Box(
                 modifier = Modifier
                     .size(36.dp)
@@ -1095,19 +1134,11 @@ private fun EnvelopeAllocationRow(
                     .background(Color.White),
                 contentAlignment = Alignment.Center
             ) {
-                if (envelope?.customIcon != null && envelope.customIcon.isNotEmpty()) {
-                    Text(
-                        text = envelope.customIcon,
-                        fontSize = 18.sp
-                    )
-                } else {
-                    Icon(
-                        imageVector = category.icon(),
-                        contentDescription = categoryName,
-                        tint = OceanTeal,
-                        modifier = Modifier.size(18.dp)
-                    )
-                }
+                val displayIcon = if (envelope?.customIcon != null && envelope.customIcon.isNotEmpty()) envelope.customIcon else category.emoji
+                Text(
+                    text = displayIcon,
+                    fontSize = 18.sp
+                )
             }
             Spacer(modifier = Modifier.width(12.dp))
             Column {
