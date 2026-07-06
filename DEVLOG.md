@@ -222,6 +222,6 @@ After successfully building the massive Phase 10 feature set (Zero-Based Budgeti
 ---
 
 ### Phase 11 — Payday Mechanics & Offline Lookbook UI
-- **Payday Safe-Spend**: Added a SharedPreferences layer for custom Payday schedules (e.g., 15, 30). The `LedgerViewModel` now calculates exact days remaining and derives a "Safe Daily Spend" limit directly on the `BalanceCard`.
+- **Payday Safe-Spend**: Added a `SharedPreferences` layer for custom Payday schedules (e.g., 15, 30). The `LedgerViewModel` now calculates exact days remaining and derives a "Safe Daily Spend" limit directly on the `BalanceCard`.
 - **100% Offline Typography**: Downloaded and bundled `Fraunces`, `Inter`, `Space Grotesk`, and `JetBrains Mono` (`.ttf`) directly into `res/font/`. Replaced `GoogleFont.Provider` entirely to guarantee high-end editorial styling with zero network fallback failures or dependency on Google Play Services.
 - **UI & UX Polish**: Updated `BalanceCard.kt` to a uniform 20dp squircle matching the exact design mockup. Restored colorful category emojis across the app. Wired the top-bar kebab menu to trigger the new Payday configuration dialog.
