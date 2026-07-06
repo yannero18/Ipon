@@ -225,3 +225,11 @@ After successfully building the massive Phase 10 feature set (Zero-Based Budgeti
 - **Payday Safe-Spend**: Added a `SharedPreferences` layer for custom Payday schedules (e.g., 15, 30). The `LedgerViewModel` now calculates exact days remaining and derives a "Safe Daily Spend" limit directly on the `BalanceCard`.
 - **100% Offline Typography**: Downloaded and bundled `Fraunces`, `Inter`, `Space Grotesk`, and `JetBrains Mono` (`.ttf`) directly into `res/font/`. Replaced `GoogleFont.Provider` entirely to guarantee high-end editorial styling with zero network fallback failures or dependency on Google Play Services.
 - **UI & UX Polish**: Updated `BalanceCard.kt` to a uniform 20dp squircle matching the exact design mockup. Restored colorful category emojis across the app. Wired the top-bar kebab menu to trigger the new Payday configuration dialog.
+
+---
+
+### Phase 12 — Typography, Payday Pacing, and Data Safety
+- **100% Offline Typography**: Downloaded and bundled `.ttf` fonts (`Fraunces`, `Inter`, `Space Grotesk`, `JetBrains Mono`) to replace Google Fonts provider for completely offline, guaranteed typography.
+- **UI & UX Polish**: Adjusted `BalanceCard` to a uniform 20dp squircle matching the mockup, restored category emojis, and wired up the 3-dots menu for Payday settings.
+- **Payday Safe-Spend**: Added a `SharedPreferences` layer for custom Payday schedules. `LedgerViewModel` now calculates exact days remaining and derives a "Safe Daily Spend" limit on the `BalanceCard`.
+- **Auto-Export Safety Net**: Wired the "Clear all data" button in Settings to automatically attempt a background CSV export to the `Downloads` folder right *before* executing the destructive wipe. If the user regrets their choice, their data is safe.

@@ -53,7 +53,8 @@ class InsightsViewModel(
     private val lastMonthRange = monthRangeMillis(monthOffset = -1)
     private val currentPeriodKey = currentYearMonth()
 
-    val uiState: StateFlow<InsightsUiState> = combine(
+    // 1. Group the first three transaction-related flows safely into a Triple
+    private val txDataFlow = combine(
         transactionRepository.observeSummaryBetween(thisMonthRange.first, thisMonthRange.second),
         transactionRepository.observeCategoryBreakdownBetween(thisMonthRange.first, thisMonthRange.second),
         transactionRepository.observeCategoryTrends(
@@ -61,7 +62,14 @@ class InsightsViewModel(
             thisMonthEnd = thisMonthRange.second,
             lastMonthStart = lastMonthRange.first,
             lastMonthEnd = lastMonthRange.second
-        ),
+        )
+    ) { summary, breakdown, trends ->
+        Triple(summary, breakdown, trends)
+    }
+
+    // 2. Combine the grouped flow with the remaining flows (Total of 4 arguments, avoiding the 6-limit warning!)
+    val uiState: StateFlow<InsightsUiState> = combine(
+        txDataFlow,
         envelopeRepository.observeProgressForPeriod(
             periodYearMonth = currentPeriodKey,
             startEpochMillis = thisMonthRange.first,
@@ -69,13 +77,7 @@ class InsightsViewModel(
         ),
         dailyReflectionRepository.observeRecent(400),
         transactionRepository.observeBetween(thisMonthRange.first, thisMonthRange.second)
-    ) { array ->
-        val summary = array[0] as PeriodSummary
-        val breakdown = array[1] as List<CategorySlice>
-        val trends = array[2] as List<CategoryTrend>
-        val envelopeProgress = array[3] as List<EnvelopeProgress>
-        val reflections = array[4] as List<DailyReflection>
-        val monthTransactions = array[5] as List<Transaction>
+    ) { (summary, breakdown, trends), envelopeProgress, reflections, monthTransactions ->
 
         val filteredTrends = trends
             .filter { !it.thisMonth.isZero || !it.lastMonth.isZero }
@@ -113,7 +115,7 @@ class InsightsViewModel(
         )
 
     /**
-     * Engine 1: Generate structuredspending report and save as local Report entity.
+     * Engine 1: Generate structured spending report and save as local Report entity.
      */
     suspend fun generateMonthlyReport(): Report {
         val currentState = uiState.value
@@ -153,11 +155,13 @@ class InsightsViewModel(
     suspend fun sweepExcessFundsToGoals(): List<String> {
         val currentState = uiState.value
         val activeGoals = goalRepository.observeProgress().first().filter { !it.goal.isArchived }
+
         if (activeGoals.isEmpty()) {
             return emptyList()
         }
 
         val results = mutableListOf<String>()
+
         val sweptEnvelopes = currentState.envelopes
             .filter { !it.cap.isZero && it.remaining.isPositive }
             .sortedByDescending { it.priority }
@@ -198,7 +202,6 @@ class InsightsViewModel(
             }
             results.add("Swept Php $remaining from ${envelope.category.displayName} ($priorityLabel priority) to ${activeGoals.size} active goals.")
         }
-
         return results
     }
 
@@ -220,8 +223,10 @@ class InsightsViewModel(
         calendar.set(Calendar.SECOND, 0)
         calendar.set(Calendar.MILLISECOND, 0)
         val start = calendar.timeInMillis
+
         calendar.add(Calendar.MONTH, 1)
         calendar.add(Calendar.MILLISECOND, -1)
+        
         return start to calendar.timeInMillis
     }
 }

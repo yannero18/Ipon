@@ -23,6 +23,8 @@ import androidx.compose.material.icons.outlined.TaskAlt
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -30,7 +32,6 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -86,10 +87,13 @@ private val PAGES = listOf(
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
-fun OnboardingScreen(onFinished: (String) -> Unit) {
-    var onboardingStep by remember { mutableStateOf(0) } // 0: Slides, 1: Name Input
+fun OnboardingScreen(onFinished: (name: String, paydays: List<Int>) -> Unit) {
+    // 0: Slides, 1: Name Input, 2: Payday Input
+    var onboardingStep by remember { mutableStateOf(0) } 
     var nameInput by remember { mutableStateOf("") }
-    val isInputValid = nameInput.trim().isNotBlank()
+    var paydaysInput by remember { mutableStateOf("") }
+    
+    val isNameValid = nameInput.trim().isNotBlank()
 
     val buttonAsymmetricShape = RoundedCornerShape(
         topStart = 24.dp,
@@ -115,7 +119,7 @@ fun OnboardingScreen(onFinished: (String) -> Unit) {
                         .padding(horizontal = 24.dp, vertical = 16.dp),
                     horizontalArrangement = Arrangement.End
                 ) {
-                    TextButton(onClick = { onFinished("Yannero") }) {
+                    TextButton(onClick = { onboardingStep = 1 }) {
                         Text("Skip", color = KapeBrownSoft)
                     }
                 }
@@ -165,7 +169,7 @@ fun OnboardingScreen(onFinished: (String) -> Unit) {
                 }
             }
         }
-    } else {
+    } else if (onboardingStep == 1) {
         Scaffold(containerColor = KapePalette.BackgroundWarm) { padding ->
             Column(
                 modifier = Modifier
@@ -182,7 +186,7 @@ fun OnboardingScreen(onFinished: (String) -> Unit) {
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     Text(
-                        text = "🐷",
+                        text = "🪙",
                         fontSize = 64.sp
                     )
                     Text(
@@ -231,8 +235,8 @@ fun OnboardingScreen(onFinished: (String) -> Unit) {
 
                 // Action Confirmation Button
                 Button(
-                    onClick = { if (isInputValid) onFinished(nameInput.trim()) },
-                    enabled = isInputValid,
+                    onClick = { if (isNameValid) onboardingStep = 2 },
+                    enabled = isNameValid,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp),
@@ -243,7 +247,113 @@ fun OnboardingScreen(onFinished: (String) -> Unit) {
                     shape = buttonAsymmetricShape
                 ) {
                     Text(
-                        text = "Get Started ☕",
+                        text = "Next ➔",
+                        color = KapePalette.TextLight,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+        }
+    } else {
+        // Step 2: Payday Configuration
+        Scaffold(containerColor = KapePalette.BackgroundWarm) { padding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(32.dp),
+                verticalArrangement = Arrangement.SpaceBetween,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.padding(top = 48.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Text(
+                        text = "📅",
+                        fontSize = 64.sp
+                    )
+                    Text(
+                        text = "When do you get paid?",
+                        fontSize = 28.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = KapePalette.TextPrimary,
+                        letterSpacing = (-0.5).sp,
+                        textAlign = TextAlign.Center
+                    )
+                    Text(
+                        text = "Ipon calculates exactly how much you can safely spend per day to make your balance last until your next sweldo.",
+                        fontSize = 14.sp,
+                        color = KapePalette.TextPrimary.copy(alpha = 0.6f),
+                        textAlign = TextAlign.Center,
+                        lineHeight = 20.sp
+                    )
+                }
+
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        text = "Enter days separated by commas:",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = KapePalette.TextPrimary
+                    )
+                    
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FilterChip(
+                            selected = paydaysInput == "15, 30",
+                            onClick = { paydaysInput = "15, 30" },
+                            label = { Text("15th & 30th", fontWeight = FontWeight.Bold) },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = OceanTeal,
+                                selectedLabelColor = Color.White
+                            )
+                        )
+                        FilterChip(
+                            selected = paydaysInput == "1",
+                            onClick = { paydaysInput = "1" },
+                            label = { Text("Every 1st", fontWeight = FontWeight.Bold) },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = OceanTeal,
+                                selectedLabelColor = Color.White
+                            )
+                        )
+                    }
+
+                    OutlinedTextField(
+                        value = paydaysInput,
+                        onValueChange = { paydaysInput = it },
+                        placeholder = { Text("e.g. 15, 30", color = KapePalette.TextPrimary.copy(alpha = 0.4f)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = KapePalette.HeroCardSolid,
+                            unfocusedBorderColor = KapePalette.TextPrimary.copy(alpha = 0.2f),
+                            focusedContainerColor = Color.Transparent,
+                            unfocusedContainerColor = Color.Transparent
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                }
+
+                Button(
+                    onClick = { 
+                        val parsedDays = paydaysInput.split(",").mapNotNull { it.trim().toIntOrNull() }.filter { it in 1..31 }
+                        val finalDays = if (parsedDays.isNotEmpty()) parsedDays else listOf(15, 30)
+                        onFinished(nameInput.trim(), finalDays) 
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = KapePalette.HeroCardSolid),
+                    shape = buttonAsymmetricShape
+                ) {
+                    Text(
+                        text = "Finish & Get Started",
                         color = KapePalette.TextLight,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold

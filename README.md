@@ -26,28 +26,31 @@ You can download the latest version of Ipon directly to your Android device:
 
 ---
 
-## 🔒 Privacy & Philosophy
+## 🔒 Privacy & Core Philosophy
 
 This project is governed by strict technical and design rules to protect your data and your peace of mind:
 
 * **Structurally Offline:** There are no accounts, no passwords, and absolutely no internet permissions in the app. Your data never leaves your device unless you manually export it.
 * **Never Auto-Write:** Recurring transactions are treated as templates that require your manual confirmation. The ledger never posts an entry behind your back.
-* **Centavo-Exact Math:** All currency is stored using exact integer math. Floating-point drift is structurally impossible, ensuring your balance is always accurate to the last centavo.
+* **Centavo-Exact Math:** All currency is stored using exact integer math (scaled-integer `Long`). Floating-point drift is structurally impossible, ensuring your balance is always accurate to the last centavo.
 * **Honest Automation:** The app learns your habits (like your preferred category for a specific local merchant) purely from your own corrections, saved locally. No cloud sync, no multi-user data sharing.
+* **Derive, Never Cache:** Envelope spend, goal progress, and debt remaining are all calculated on the fly using strict SQL `SUM()` queries over append-only ledgers. We do not store "current balances" as discrete columns that can fall out of sync.
 
 ---
 
 ## ✨ Features
 
 * **Philippine-Aware Categorization:** Built-in categories that reflect real local spending and income (e.g., *Sweldo, OFW Remittances, Sari-sari income, Abuloy, Government / Dues*).
-* **Envelope Budgeting:** Monthly spending caps per expense category.
-* **Zero-Based Budgeting & 50/30/20:** Map your active income against envelopes and recurring expenses so every peso has a job.
+* **Budgeting Frameworks:** 
+  * **Envelope Budgeting:** Monthly spending caps per expense category, with auto-suggested caps based on your 3-month trailing average.
+  * **Zero-Based Budgeting & 50/30/20:** Map your active income against envelopes and recurring expenses so every peso has a job.
 * **Payday Safe-Spend Pacing:** Set your exact paydays (e.g., 15th and 30th) to automatically calculate your safe daily spend limit based on your available balance.
 * **Debt Payoff Tracker:** Optimize debt clearing using either the Snowball (momentum) or Avalanche (mathematically optimal) methods.
+* **Smart Console:** Pace-based envelope runway projections, recurring pattern detection, and one-tap sweeps of unspent envelope budgets directly to savings goals.
 * **Append-Only Goals:** Savings targets with a dedicated contribution log, showing real money moved rather than an arbitrary progress bar.
 * **Daily Reflection:** A calm, mindful ritual embedded on the ledger to pair your daily spending with a simple mood check-in.
-* **Smart Console:** Pace-based envelope runway projections, recurring pattern detection, and one-tap sweeps of unspent envelope budgets directly to savings goals.
-* **Full Data Ownership:** A one-tap export to generate a complete CSV of your entire financial history to your local `Downloads` folder.
+* **Year-in-Ipon Recap:** A yearly synthesis pulling together transactions, goal contributions, and mood check-ins into one summary screen.
+* **Full Data Ownership & Safety:** A one-tap export to generate a complete CSV of your entire financial history to your local `Downloads` folder. Includes an auto-export safety net if you ever choose to clear your data.
 
 ---
 
@@ -61,6 +64,7 @@ Ipon rejects the generic, glossy, 3D-heavy aesthetics of standard finance apps i
 * **Alerts:** Terracotta (`#D1664F`) — reserved *strictly* for over-budget warnings or destructive actions.
 * **Geometry:** Organic, slightly asymmetric "squircle" shapes, avoiding clinical, perfectly rounded corners. 
 * **Offline Typography:** Bundled variable fonts (`Fraunces` and `Inter`) guarantee a high-end, tabular-serif editorial look without requiring Google Play Services or network fetches.
+* **Haptics & Audio:** Custom synthesizer "coin drop" feedback built directly into the app's event layer for a tactile, physical feel.
 
 ---
 

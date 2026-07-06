@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -29,6 +30,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ipon.app.BuildConfig
@@ -47,16 +49,20 @@ fun SettingsScreen(
 ) {
     val viewModel: SettingsViewModel = viewModel(factory = viewModelFactory)
     val dataCleared by viewModel.dataCleared.collectAsState()
+    val clearDataMessage by viewModel.clearDataMessage.collectAsState()
     val exportResult by viewModel.exportResult.collectAsState()
     val isExporting by viewModel.isExporting.collectAsState()
+    val isClearing by viewModel.isClearing.collectAsState()
 
     var showConfirmDialog by remember { mutableStateOf(false) }
     var showFinalConfirmDialog by remember { mutableStateOf(false) }
 
+    // Automatically close the confirmation dialogs when the data wipe finishes
     LaunchedEffect(dataCleared) {
         if (dataCleared) {
             showConfirmDialog = false
             showFinalConfirmDialog = false
+            viewModel.resetClearedFlag()
         }
     }
 
@@ -71,6 +77,7 @@ fun SettingsScreen(
                 Text(
                     text = "Settings",
                     style = MaterialTheme.typography.headlineMedium,
+                    color = KapeBrown,
                     modifier = Modifier.padding(bottom = 20.dp)
                 )
 
@@ -112,7 +119,7 @@ fun SettingsScreen(
                         onClick = onLearnedCategoriesClick,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("Your learned categories", color = OceanTeal)
+                        Text("Your learned categories", color = OceanTeal, fontWeight = FontWeight.Bold)
                     }
                 }
 
@@ -132,14 +139,14 @@ fun SettingsScreen(
                         shape = IponShapes.SquircleSm,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        if (isExporting) {
+                        if (isExporting && !showFinalConfirmDialog) {
                             CircularProgressIndicator(
-                                modifier = Modifier.height(18.dp),
+                                modifier = Modifier.size(18.dp),
                                 color = RicePaper,
                                 strokeWidth = 2.dp
                             )
                         } else {
-                            Text("Export to CSV", color = RicePaper)
+                            Text("Export to CSV", color = RicePaper, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
@@ -148,7 +155,7 @@ fun SettingsScreen(
                     Text(
                         text = "Permanently erases every transaction, envelope, recurring " +
                             "template, goal, contribution, and reflection on this device. " +
-                            "This cannot be undone. Consider exporting first.",
+                            "Ipon will attempt to auto-save a safety backup to your Downloads folder before wiping.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = KapeBrownSoft,
                         modifier = Modifier.padding(bottom = 12.dp)
@@ -157,7 +164,7 @@ fun SettingsScreen(
                         onClick = { showConfirmDialog = true },
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("Clear all data", color = Terracotta)
+                        Text("Clear all data", color = Terracotta, fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -169,40 +176,49 @@ fun SettingsScreen(
             onDismissRequest = { viewModel.clearExportResult() },
             title = {
                 Text(
-                    when (result) {
+                    text = when (result) {
                         is ExportResult.Success -> "Exported"
                         ExportResult.Unsupported -> "Not available"
                         ExportResult.Failed -> "Export failed"
-                    }
+                    },
+                    color = KapeBrown,
+                    fontWeight = FontWeight.Bold
                 )
             },
             text = {
                 Text(
-                    when (result) {
+                    text = when (result) {
                         is ExportResult.Success -> "Saved as \"${result.filename}\" in your Downloads folder."
                         ExportResult.Unsupported -> "CSV export needs Android 10 or newer. This device's Android version doesn't support it."
-                        ExportResult.Failed -> "Something went wrong while writing the file. Nothing was changed -- you can try again."
-                    }
+                        ExportResult.Failed -> "Something went wrong while writing the file."
+                    },
+                    color = KapeBrownSoft
                 )
             },
             confirmButton = {
-                TextButton(onClick = { viewModel.clearExportResult() }) {
-                    Text("OK", color = OceanTeal)
+                Button(
+                    onClick = { viewModel.clearExportResult() },
+                    colors = ButtonDefaults.buttonColors(containerColor = OceanTeal),
+                    shape = IponShapes.SquircleSm
+                ) {
+                    Text("OK", color = Color.White)
                 }
-            }
+            },
+            containerColor = RicePaper,
+            shape = IponShapes.SquircleLg
         )
     }
 
     if (showConfirmDialog) {
         AlertDialog(
             onDismissRequest = { showConfirmDialog = false },
-            title = { Text("Clear all data?") },
+            title = { Text("Clear all data?", color = KapeBrown, fontWeight = FontWeight.Bold) },
             text = {
                 Text(
                     "This deletes your entire ledger, all envelopes, recurring " +
-                        "templates, goals, and reflections. There is no automatic " +
-                        "cloud backup to restore from -- if you haven't exported a " +
-                        "copy, this is permanent. This cannot be undone."
+                        "templates, goals, and reflections.\n\n" +
+                        "If you haven't exported a copy, this is permanent. This cannot be undone.",
+                    color = KapeBrownSoft
                 )
             },
             confirmButton = {
@@ -210,32 +226,78 @@ fun SettingsScreen(
                     showConfirmDialog = false
                     showFinalConfirmDialog = true
                 }) {
-                    Text("Continue", color = Terracotta)
+                    Text("Continue", color = Terracotta, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showConfirmDialog = false }) {
                     Text("Cancel", color = KapeBrownSoft)
                 }
-            }
+            },
+            containerColor = RicePaper,
+            shape = IponShapes.SquircleLg
         )
     }
 
     if (showFinalConfirmDialog) {
         AlertDialog(
-            onDismissRequest = { showFinalConfirmDialog = false },
-            title = { Text("Are you sure?") },
-            text = { Text("This is your last chance to back out. Everything will be permanently deleted.") },
+            onDismissRequest = { if (!isClearing) showFinalConfirmDialog = false },
+            title = { Text("Are you absolutely sure?", color = KapeBrown, fontWeight = FontWeight.Bold) },
+            text = {
+                Column {
+                    Text("This is your last chance to back out. Everything will be permanently deleted.", color = KapeBrownSoft)
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        "🛡️ As a safety net, an automatic CSV backup will be saved to your Downloads folder before the data is erased.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = OceanTeal,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            },
             confirmButton = {
-                TextButton(onClick = { viewModel.clearAllData() }) {
-                    Text("Delete everything", color = Terracotta)
+                Button(
+                    onClick = { viewModel.clearAllData() },
+                    enabled = !isClearing,
+                    colors = ButtonDefaults.buttonColors(containerColor = Terracotta),
+                    shape = IponShapes.SquircleSm
+                ) {
+                    if (isClearing) {
+                        CircularProgressIndicator(modifier = Modifier.size(18.dp), color = Color.White, strokeWidth = 2.dp)
+                    } else {
+                        Text("Delete everything", color = Color.White)
+                    }
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showFinalConfirmDialog = false }) {
+                TextButton(
+                    onClick = { showFinalConfirmDialog = false },
+                    enabled = !isClearing
+                ) {
                     Text("Cancel", color = KapeBrownSoft)
                 }
-            }
+            },
+            containerColor = RicePaper,
+            shape = IponShapes.SquircleLg
+        )
+    }
+
+    clearDataMessage?.let { message ->
+        AlertDialog(
+            onDismissRequest = { viewModel.resetClearDataMessage() },
+            title = { Text("Data Cleared", color = KapeBrown, fontWeight = FontWeight.Bold) },
+            text = { Text(message, color = KapeBrownSoft) },
+            confirmButton = {
+                Button(
+                    onClick = { viewModel.resetClearDataMessage() },
+                    colors = ButtonDefaults.buttonColors(containerColor = OceanTeal),
+                    shape = IponShapes.SquircleSm
+                ) {
+                    Text("OK", color = Color.White)
+                }
+            },
+            containerColor = RicePaper,
+            shape = IponShapes.SquircleLg
         )
     }
 }
@@ -272,6 +334,6 @@ private fun InfoRow(label: String, value: String) {
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Text(text = label, style = MaterialTheme.typography.bodyMedium, color = KapeBrownSoft)
-        Text(text = value, style = MaterialTheme.typography.bodyMedium, color = KapeBrown)
+        Text(text = value, style = MaterialTheme.typography.bodyMedium, color = KapeBrown, fontWeight = FontWeight.Medium)
     }
 }

@@ -33,19 +33,15 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    // Read once per process start, not on every
-                    // recomposition -- onboarding's completed state is only
-                    // ever written from the screen below itself, never from
-                    // elsewhere, so a single initial read plus local state
-                    // is enough; no need for this to be a Flow.
                     var hasSeenOnboarding by remember { mutableStateOf(onboardingPreferences.hasSeenOnboarding()) }
 
                     if (hasSeenOnboarding) {
                         IponNavHost(viewModelFactory = viewModelFactory)
                     } else {
                         OnboardingScreen(
-                            onFinished = { name ->
+                            onFinished = { name, paydays ->
                                 onboardingPreferences.saveAccountName(name)
+                                onboardingPreferences.savePaydays(paydays)
                                 onboardingPreferences.markOnboardingSeen()
                                 hasSeenOnboarding = true
                             }
