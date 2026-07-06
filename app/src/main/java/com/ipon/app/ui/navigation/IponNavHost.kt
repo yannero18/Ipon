@@ -64,7 +64,6 @@ import com.ipon.app.ui.screens.settings.LearnedCategoriesScreen
 import com.ipon.app.ui.screens.settings.SettingsScreen
 import com.ipon.app.ui.theme.*
 
-
 /**
  * Nav structure, v2: 4 bottom tabs (Ledger, Plan, Insights, Settings)
  * instead of the earlier 5 (Ledger, Envelopes, Recurring, Goals, Insights)
@@ -297,7 +296,7 @@ fun IponNavHost(viewModelFactory: IponViewModelFactory) {
                                 Box(
                                     modifier = Modifier
                                         .size(52.dp)
-                                        .clip(IponShapes.AsymmetricSquircle)
+                                        .clip(RoundedCornerShape(16.dp))
                                         .background(JeepneyOrange)
                                         .clickable {
                                             navController.navigate(IponDestination.AddTransaction.createRoute())

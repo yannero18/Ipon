@@ -3,26 +3,22 @@ package com.ipon.app.ui.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.BaselineShift
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ipon.app.ui.theme.RicePaper
-import com.ipon.app.ui.theme.TabularNumberStyle
 import com.ipon.app.ui.theme.OceanTeal
-import com.ipon.app.ui.theme.IponShapes
-import androidx.compose.material3.HorizontalDivider
 import com.ipon.app.ui.theme.TabularSerifNumberStyle
 import com.ipon.app.util.Money
 
@@ -51,10 +47,13 @@ fun BalanceCard(
     totalSavings: Money,
     modifier: Modifier = Modifier,
     accountName: String = "Yannero",
-    estimatedDaysOfRunway: Int? = null
+    estimatedDaysOfRunway: Int? = null,
+    // NEW PAYDAY VARIABLES
+    daysUntilPayday: Int? = null,
+    safeDailySpend: Money = Money.ZERO
 ) {
-    // Exact asymmetric squircle shape (24dp/8dp/24dp/8dp) requested in the design specification
-    val cardShape = IponShapes.AsymmetricSquircle
+    // Exact uniform squircle shape (20dp) from your mockup design
+    val cardShape = RoundedCornerShape(20.dp)
 
     // Split balance into whole number and decimal cents parts for high-contrast sizing
     val rawAmountInDouble = availableThisMonth.minorUnits.toDouble() / 100.0
@@ -101,7 +100,7 @@ fun BalanceCard(
                 )
             )
             
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(6.dp))
             
             // Massive balance with stepped decimal numbers
             Text(
@@ -137,25 +136,17 @@ fun BalanceCard(
                 style = TabularSerifNumberStyle
             )
 
-            Spacer(modifier = Modifier.height(20.dp))
-
-            // Beautiful thin horizontal divider matching the design specification
-            HorizontalDivider(
-                color = RicePaper.copy(alpha = 0.15f),
-                thickness = 1.dp
-            )
-
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
             // Metrics section: In, Out, Saved distributed as columns
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 MetricColumn(
                     label = "In", 
                     amount = income, 
-                    amountColor = KapePalette.GreenIncome,
+                    amountColor = KapePalette.GreenIncome,./
                     modifier = Modifier.weight(1f)
                 )
                 MetricColumn(
@@ -167,14 +158,46 @@ fun BalanceCard(
                 MetricColumn(
                     label = "Saved", 
                     amount = totalSavings, 
-                    amountColor = KapePalette.TextLight,
+                    amountColor = RicePaper,
                     modifier = Modifier.weight(1f)
                 )
             }
 
-            // Optional runway days indicator below
-            if (estimatedDaysOfRunway != null && estimatedDaysOfRunway >= 0) {
+            // Payday / Runway Indicator
+            if (daysUntilPayday != null) {
                 Spacer(modifier = Modifier.height(16.dp))
+                HorizontalDivider(color = RicePaper.copy(alpha = 0.15f), thickness = 1.dp)
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (daysUntilPayday == 0) {
+                        Text(
+                            text = "It's Payday! 🎉", 
+                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold), 
+                            color = RicePaper
+                        )
+                    } else {
+                        Text(
+                            text = "Safe to spend: ${safeDailySpend.formatPhp()} / day",
+                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                            color = Color(0xFFAEE2C9) // Soft mint green
+                        )
+                        Text(
+                            text = "$daysUntilPayday days left",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = RicePaper.copy(alpha = 0.7f)
+                        )
+                    }
+                }
+            } else if (estimatedDaysOfRunway != null && estimatedDaysOfRunway >= 0) {
+                Spacer(modifier = Modifier.height(16.dp))
+                HorizontalDivider(color = RicePaper.copy(alpha = 0.15f), thickness = 1.dp)
+                Spacer(modifier = Modifier.height(12.dp))
+                
                 Text(
                     text = when (estimatedDaysOfRunway) {
                         0 -> "At this pace, your balance is spent"
@@ -203,15 +226,15 @@ private fun MetricColumn(
         Text(
             text = label,
             color = RicePaper.copy(alpha = 0.6f),
-            fontSize = 13.sp,
-            fontWeight = FontWeight.Medium
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Bold
         )
         Text(
             text = buildAnnotatedString {
                 withStyle(style = SpanStyle(fontSize = 13.sp, fontWeight = FontWeight.Normal, fontFeatureSettings = "tnum")) {
                     append("₱")
                 }
-                withStyle(style = SpanStyle(fontSize = 17.sp, fontWeight = FontWeight.Bold, fontFeatureSettings = "tnum")) {
+                withStyle(style = SpanStyle(fontSize = 14.sp, fontWeight = FontWeight.Bold, fontFeatureSettings = "tnum")) {
                     append(String.format("%,.2f", amount.minorUnits.toDouble() / 100.0))
                 }
             },

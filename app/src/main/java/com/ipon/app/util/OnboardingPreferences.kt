@@ -2,12 +2,6 @@ package com.ipon.app.util
 
 import android.content.Context
 
-/**
- * Whether the person has seen the onboarding intro. A single boolean is
- * not worth a Room table/migration -- SharedPreferences is the right-sized
- * tool here, used nowhere else in the app specifically so it stays obvious
- * that this is the one exception to "everything lives in Room."
- */
 class OnboardingPreferences(context: Context) {
 
     private val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -24,9 +18,20 @@ class OnboardingPreferences(context: Context) {
         prefs.edit().putString(KEY_ACCOUNT_NAME, name).apply()
     }
 
+    // --- PAYDAY PREFERENCES ---
+    fun getPaydays(): List<Int> {
+        val daysString = prefs.getString(KEY_PAYDAYS, "15,30") ?: "15,30"
+        return daysString.split(",").mapNotNull { it.trim().toIntOrNull() }
+    }
+    
+    fun savePaydays(days: List<Int>) {
+        prefs.edit().putString(KEY_PAYDAYS, days.joinToString(",")).apply()
+    }
+
     companion object {
         private const val PREFS_NAME = "ipon_onboarding_prefs"
         private const val KEY_HAS_SEEN_ONBOARDING = "has_seen_onboarding"
         private const val KEY_ACCOUNT_NAME = "account_name"
+        private const val KEY_PAYDAYS = "paydays"
     }
 }

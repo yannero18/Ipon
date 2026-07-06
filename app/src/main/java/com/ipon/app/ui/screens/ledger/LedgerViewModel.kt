@@ -16,6 +16,7 @@ import com.ipon.app.data.repository.RecurringTemplateRepository
 import com.ipon.app.data.repository.TransactionRepository
 import com.ipon.app.util.Money
 import com.ipon.app.util.OnboardingPreferences
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -39,21 +40,29 @@ sealed interface LedgerUiState {
     val remainingBudget: Money
     val totalEnvelopeCaps: Money
     val dueTemplates: List<RecurringTemplate>
+    
+    // NEW PAYDAY VARIABLES
+    val daysUntilPayday: Int?
+    val safeDailySpend: Money
+    val currentPaydays: List<Int>
 
     object Loading : LedgerUiState {
-        override val isLoading: Boolean = true
-        override val accountName: String = "Yannero"
-        override val transactions: List<Transaction> = emptyList()
-        override val summary: PeriodSummary = PeriodSummary(Money.ZERO, Money.ZERO)
-        override val estimatedDaysOfRunway: Int? = null
-        override val totalSavingsBalance: Money = Money.ZERO
-        override val activeGoals: List<GoalProgress> = emptyList()
-        override val monthlyContributionsSum: Money = Money.ZERO
-        override val envelopes: List<EnvelopeProgress> = emptyList()
-        override val availableBalance: Money = Money.ZERO
-        override val remainingBudget: Money = Money.ZERO
-        override val totalEnvelopeCaps: Money = Money.ZERO
-        override val dueTemplates: List<RecurringTemplate> = emptyList()
+        override val isLoading = true
+        override val accountName = "Yannero"
+        override val transactions = emptyList<Transaction>()
+        override val summary = PeriodSummary(Money.ZERO, Money.ZERO)
+        override val estimatedDaysOfRunway = null
+        override val totalSavingsBalance = Money.ZERO
+        override val activeGoals = emptyList<GoalProgress>()
+        override val monthlyContributionsSum = Money.ZERO
+        override val envelopes = emptyList<EnvelopeProgress>()
+        override val availableBalance = Money.ZERO
+        override val remainingBudget = Money.ZERO
+        override val totalEnvelopeCaps = Money.ZERO
+        override val dueTemplates = emptyList<RecurringTemplate>()
+        override val daysUntilPayday = null
+        override val safeDailySpend = Money.ZERO
+        override val currentPaydays = emptyList<Int>()
     }
 
     data class Success(
@@ -68,9 +77,12 @@ sealed interface LedgerUiState {
         override val availableBalance: Money = Money.ZERO,
         override val remainingBudget: Money = Money.ZERO,
         override val totalEnvelopeCaps: Money = Money.ZERO,
-        override val dueTemplates: List<RecurringTemplate> = emptyList()
+        override val dueTemplates: List<RecurringTemplate> = emptyList(),
+        override val daysUntilPayday: Int? = null,
+        override val safeDailySpend: Money = Money.ZERO,
+        override val currentPaydays: List<Int> = emptyList()
     ) : LedgerUiState {
-        override val isLoading: Boolean = false
+        override val isLoading = false
     }
 
     data class Empty(
@@ -78,18 +90,28 @@ sealed interface LedgerUiState {
         override val totalSavingsBalance: Money = Money.ZERO,
         override val activeGoals: List<GoalProgress> = emptyList(),
         override val monthlyContributionsSum: Money = Money.ZERO,
-        override val dueTemplates: List<RecurringTemplate> = emptyList()
-    ) : LedgerUiState {
-        override val isLoading: Boolean = false
-        override val transactions: List<Transaction> = emptyList()
-        override val summary: PeriodSummary = PeriodSummary(Money.ZERO, Money.ZERO)
-        override val estimatedDaysOfRunway: Int? = null
-        override val envelopes: List<EnvelopeProgress> = emptyList()
-        override val availableBalance: Money = Money.ZERO
-        override val remainingBudget: Money = Money.ZERO
+        override val dueTemplates: List<RecurringTemplate> = emptyList(),
+        override val daysUntilPayday: Int? = null,
+        override val safeDailySpend: Money = Money.ZERO,
+        override val currentPaydays: List<Int> = emptyList(),
+        override val availableBalance: Money = Money.ZERO,
+        override val remainingBudget: Money = Money.ZERO,
         override val totalEnvelopeCaps: Money = Money.ZERO
+    ) : LedgerUiState {
+        override val isLoading = false
+        override val transactions = emptyList<Transaction>()
+        override val summary = PeriodSummary(Money.ZERO, Money.ZERO)
+        override val estimatedDaysOfRunway = null
+        override val envelopes = emptyList<EnvelopeProgress>()
     }
 }
+
+private data class TempLedgerData(
+    val name: String, val transactions: List<Transaction>, val summary: PeriodSummary,
+    val dayOfMonth: Int, val maxDays: Int, val averageDailySpend: Money,
+    val totalSavings: Money, val monthlyContributions: Money, val envelopes: List<EnvelopeProgress>,
+    val available: Money, val remainingBudget: Money, val totalEnvelopeCaps: Money, val goals: List<GoalProgress>
+)
 
 class LedgerViewModel(
     private val transactionRepository: TransactionRepository,
@@ -101,26 +123,40 @@ class LedgerViewModel(
 
     private val currentPeriod = currentYearMonth()
     private val monthRange = currentMonthRangeMillis()
+    private val paydaysFlow = MutableStateFlow(onboardingPreferences.getPaydays())
 
-    val uiState: StateFlow<LedgerUiState> = combine(
+    private val ledgerDataFlow = combine(
         transactionRepository.observeBetween(monthRange.first, monthRange.second),
         transactionRepository.observeSummaryBetween(monthRange.first, monthRange.second),
-        envelopeRepository.observeProgressForPeriod(currentPeriod, monthRange.first, monthRange.second),
+        envelopeRepository.observeProgressForPeriod(currentPeriod, monthRange.first, monthRange.second)
+    ) { transactions, summary, envelopes ->
+        Triple(transactions, summary, envelopes)
+    }
+
+    private val goalsDataFlow = combine(
         goalRepository.observeProgress(),
         goalRepository.observeAllContributions()
-    ) { transactions, summary, envelopes, goals, contributions ->
+    ) { goals, contributions ->
+        Pair(goals, contributions)
+    }
+
+    val uiState: StateFlow<LedgerUiState> = combine(
+        ledgerDataFlow,
+        goalsDataFlow,
+        recurringTemplateRepository.observeDue(),
+        paydaysFlow
+    ) { (transactions, summary, envelopes), (goals, contributions), dueTemplates, paydays ->
         val name = onboardingPreferences.getAccountName()
         val dayOfMonth = Calendar.getInstance().get(Calendar.DAY_OF_MONTH)
+        val maxDays = Calendar.getInstance().getActualMaximum(Calendar.DAY_OF_MONTH)
         val averageDailySpend = if (dayOfMonth > 0) {
             Money.ofMinorUnits(summary.expense.minorUnits / dayOfMonth)
         } else {
             Money.ZERO
         }
 
-        // Calculate total savings balance
         val totalSavings = Money.ofMinorUnits(goals.sumOf { it.saved.minorUnits })
 
-        // Calculate monthly contributions sum (contributions made in this month's range)
         val monthlyContributions = Money.ofMinorUnits(
             contributions
                 .filter { it.contributedAtEpochMillis in monthRange.first..monthRange.second }
@@ -128,7 +164,6 @@ class LedgerViewModel(
         )
 
         val totalEnvelopeCapsMinor = envelopes.sumOf { it.cap.minorUnits }
-        // Calculate available balance (net = income - expense) from database
         val available = Money.ofMinorUnits(
             summary.income.minorUnits - summary.expense.minorUnits
         )
@@ -136,13 +171,25 @@ class LedgerViewModel(
         val remainingBudgetMinor = totalEnvelopeCapsMinor - summary.expense.minorUnits
         val remainingBudget = Money.ofMinorUnits(remainingBudgetMinor)
         val totalEnvelopeCaps = Money.ofMinorUnits(totalEnvelopeCapsMinor)
+        
+        val daysUntilPayday = calculateDaysUntilPayday(paydays, dayOfMonth, maxDays)
+        val safeDailyMinor = if (daysUntilPayday != null && daysUntilPayday > 0 && available.minorUnits > 0) {
+            available.minorUnits / daysUntilPayday
+        } else if (daysUntilPayday == 0 && available.minorUnits > 0) {
+            available.minorUnits 
+        } else 0L
+        val safeDailySpend = Money.ofMinorUnits(safeDailyMinor)
 
         if (transactions.isEmpty() && envelopes.isEmpty()) {
             LedgerUiState.Empty(
                 accountName = name,
                 totalSavingsBalance = totalSavings,
                 activeGoals = goals,
-                monthlyContributionsSum = monthlyContributions
+                monthlyContributionsSum = monthlyContributions,
+                dueTemplates = dueTemplates,
+                currentPaydays = paydays,
+                daysUntilPayday = daysUntilPayday,
+                safeDailySpend = safeDailySpend
             )
         } else {
             LedgerUiState.Success(
@@ -160,20 +207,38 @@ class LedgerViewModel(
                 envelopes = envelopes,
                 availableBalance = available,
                 remainingBudget = remainingBudget,
-                totalEnvelopeCaps = totalEnvelopeCaps
+                totalEnvelopeCaps = totalEnvelopeCaps,
+                dueTemplates = dueTemplates,
+                currentPaydays = paydays,
+                daysUntilPayday = daysUntilPayday,
+                safeDailySpend = safeDailySpend
             )
-        }
-    }.combine(recurringTemplateRepository.observeDue()) { state, due ->
-        when (state) {
-            is LedgerUiState.Loading -> state
-            is LedgerUiState.Empty -> state.copy(dueTemplates = due)
-            is LedgerUiState.Success -> state.copy(dueTemplates = due)
         }
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = LedgerUiState.Loading
     )
+
+    private fun calculateDaysUntilPayday(paydays: List<Int>, currentDay: Int, maxDays: Int): Int? {
+        if (paydays.isEmpty()) return null
+        val validPaydays = paydays.map { it.coerceAtMost(maxDays) }.sorted()
+        val nextPaydayThisMonth = validPaydays.firstOrNull { it >= currentDay }
+        
+        return if (nextPaydayThisMonth != null) {
+            nextPaydayThisMonth - currentDay
+        } else {
+            val nextMonthCal = Calendar.getInstance().apply { add(Calendar.MONTH, 1) }
+            val nextMonthMax = nextMonthCal.getActualMaximum(Calendar.DAY_OF_MONTH)
+            val firstPaydayNextMonth = paydays.map { it.coerceAtMost(nextMonthMax) }.sorted().firstOrNull() ?: 1
+            (maxDays - currentDay) + firstPaydayNextMonth
+        }
+    }
+
+    fun updatePaydays(paydays: List<Int>) {
+        onboardingPreferences.savePaydays(paydays)
+        paydaysFlow.value = paydays
+    }
 
     fun autoConfirmAllDueTemplates() {
         viewModelScope.launch {
