@@ -23,9 +23,10 @@ class GoalsViewModel(private val repository: GoalRepository) : ViewModel() {
         .map { progress -> GoalsUiState(goals = progress, isLoading = false) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), GoalsUiState())
 
-    fun createGoal(label: String, target: Money, emoji: String, deadline: String?) {
+    // UPDATED to accept imageUri
+    fun createGoal(label: String, target: Money, emoji: String, deadline: String?, imageUri: String? = null) {
         viewModelScope.launch {
-            repository.createGoal(label, target, emoji, deadline)
+            repository.createGoal(label, target, emoji, deadline, imageUri)
         }
     }
 

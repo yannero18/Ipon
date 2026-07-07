@@ -9,7 +9,8 @@ data class Goal(
     val target: Money,
     val emoji: String,
     val isArchived: Boolean,
-    val deadline: String? = null
+    val deadline: String? = null,
+    val imageUri: String? = null // Added for custom photos
 )
 
 data class GoalProgress(
@@ -38,7 +39,8 @@ fun GoalEntity.toDomain(): Goal = Goal(
     target = Money.ofMinorUnits(targetMinorUnits),
     emoji = emoji,
     isArchived = isArchived,
-    deadline = deadline
+    deadline = deadline,
+    imageUri = imageUri
 )
 
 fun Goal.toEntity(): GoalEntity = GoalEntity(
@@ -47,5 +49,6 @@ fun Goal.toEntity(): GoalEntity = GoalEntity(
     targetMinorUnits = target.minorUnits,
     emoji = emoji,
     isArchived = isArchived,
-    deadline = deadline
+    deadline = deadline,
+    imageUri = imageUri
 )

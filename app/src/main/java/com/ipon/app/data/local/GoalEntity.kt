@@ -13,6 +13,7 @@ import java.util.UUID
  * transactions. A Goal tracks "I'm saving toward Y," and its progress comes
  * from deliberate contributions the user logs (see [GoalContributionEntity]),
  * not from anything inferred off the ledger.
+ *
  * That's why goals get their own contribution log rather than reusing the
  * transactions table -- a goal contribution isn't income or an expense, and
  * forcing it into that table would corrupt the monthly in/out totals on the
@@ -41,7 +42,11 @@ data class GoalEntity(
     val deadline: String? = null,
 
     @ColumnInfo(name = "createdAtEpochMillis")
-    val createdAtEpochMillis: Long = System.currentTimeMillis()
+    val createdAtEpochMillis: Long = System.currentTimeMillis(),
+
+    // NEW COLUMN FOR GOTYME-STYLE CUSTOM PHOTOS
+    @ColumnInfo(name = "imageUri")
+    val imageUri: String? = null
 )
 
 /**

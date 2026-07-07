@@ -51,14 +51,16 @@ class GoalRepository(private val dao: GoalDao) {
             }
         }
 
-    suspend fun createGoal(label: String, target: Money, emoji: String, deadline: String? = null) {
+    // UPDATED to accept imageUri
+    suspend fun createGoal(label: String, target: Money, emoji: String, deadline: String? = null, imageUri: String? = null) {
         dao.insert(
             GoalEntity(
                 id = UUID.randomUUID().toString(),
                 label = label,
                 targetMinorUnits = target.minorUnits,
                 emoji = emoji,
-                deadline = deadline
+                deadline = deadline,
+                imageUri = imageUri
             )
         )
     }

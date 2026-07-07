@@ -21,7 +21,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         DebtPaymentEntity::class,
         ReportEntity::class
     ],
-    version = 11,
+    version = 12, // Bumping version for the new imageUri column
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -115,6 +115,13 @@ abstract class IponDatabase : RoomDatabase() {
                 db.execSQL("ALTER TABLE envelopes ADD COLUMN customIcon TEXT;")
             }
         }
+        
+        // NEW MIGRATION: Added imageUri column for GoSave photos!
+        private val MIGRATION_11_12 = object : Migration(11, 12) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE goals ADD COLUMN imageUri TEXT;")
+            }
+        }
 
         private fun executeSchema(db: SupportSQLiteDatabase) {
             // Deprecated helper to initialize full schema, now handled incrementally or via createFromAsset
@@ -128,7 +135,7 @@ abstract class IponDatabase : RoomDatabase() {
             
             db.execSQL("CREATE TABLE IF NOT EXISTS recurring_templates (id TEXT NOT NULL PRIMARY KEY, label TEXT NOT NULL, amountMinorUnits INTEGER NOT NULL, type TEXT NOT NULL, category TEXT NOT NULL, merchantRaw TEXT, frequency TEXT NOT NULL, dayOfPeriod INTEGER NOT NULL, lastConfirmedPeriodKey TEXT, isPaused INTEGER NOT NULL DEFAULT 0, createdAtEpochMillis INTEGER NOT NULL) WITHOUT ROWID;")
             
-            db.execSQL("CREATE TABLE IF NOT EXISTS goals (id TEXT NOT NULL PRIMARY KEY, label TEXT NOT NULL, targetMinorUnits INTEGER NOT NULL, emoji TEXT NOT NULL, isArchived INTEGER NOT NULL DEFAULT 0, deadline TEXT, createdAtEpochMillis INTEGER NOT NULL) WITHOUT ROWID;")
+            db.execSQL("CREATE TABLE IF NOT EXISTS goals (id TEXT NOT NULL PRIMARY KEY, label TEXT NOT NULL, targetMinorUnits INTEGER NOT NULL, emoji TEXT NOT NULL, isArchived INTEGER NOT NULL DEFAULT 0, deadline TEXT, createdAtEpochMillis INTEGER NOT NULL, imageUri TEXT) WITHOUT ROWID;")
             
             db.execSQL("CREATE TABLE IF NOT EXISTS goal_contributions (id TEXT NOT NULL PRIMARY KEY, goalId TEXT NOT NULL, amountMinorUnits INTEGER NOT NULL, note TEXT, contributedAtEpochMillis INTEGER NOT NULL) WITHOUT ROWID;")
             db.execSQL("CREATE INDEX IF NOT EXISTS index_goal_contributions_goalId ON goal_contributions (goalId);")
@@ -157,7 +164,8 @@ abstract class IponDatabase : RoomDatabase() {
                     MIGRATION_7_8,
                     MIGRATION_8_9,
                     MIGRATION_9_10,
-                    MIGRATION_10_11
+                    MIGRATION_10_11,
+                    MIGRATION_11_12
                 )
                 .build()
     }

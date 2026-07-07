@@ -1,25 +1,55 @@
 package com.ipon.app.ui.screens.goals
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.outlined.Flag
-import androidx.compose.material.icons.outlined.StarBorder
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Image
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -27,246 +57,195 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ipon.app.data.model.Goal
 import com.ipon.app.data.model.GoalProgress
 import com.ipon.app.di.IponViewModelFactory
-import com.ipon.app.ui.theme.*
+import com.ipon.app.ui.components.GoalRingAvatar
+import com.ipon.app.ui.theme.IponShapes
+import com.ipon.app.ui.theme.JeepneyOrange
+import com.ipon.app.ui.theme.KapeBrown
+import com.ipon.app.ui.theme.KapeBrownSoft
+import com.ipon.app.ui.theme.OceanTeal
+import com.ipon.app.ui.theme.RicePaper
 import com.ipon.app.util.Money
-
-private val GOAL_EMOJI_CHOICES = listOf("\ud83c\udfe1", "\ud83c\udfd6\ufe0f", "\ud83c\udfd3", "\ud83d\udc8d", "\ud83c\udf93", "\ud83d\ude91", "\ud83c\udf08", "\ud83d\udcb0")
 
 @Composable
 fun GoalsScreen(viewModelFactory: IponViewModelFactory) {
     val viewModel: GoalsViewModel = viewModel(factory = viewModelFactory)
     val uiState by viewModel.uiState.collectAsState()
 
-    val context = androidx.compose.ui.platform.LocalContext.current
-    val haptics = remember(context) { com.ipon.app.util.HapticFeedbackManager(context) }
-
-    var contributingTo by remember { mutableStateOf<Goal?>(null) }
     var showCreateDialog by remember { mutableStateOf(false) }
-    var managingGoal by remember { mutableStateOf<Goal?>(null) }
-    var editingGoal by remember { mutableStateOf<Goal?>(null) }
+    var selectedGoalForAdd by remember { mutableStateOf<Goal?>(null) }
+    var selectedGoalForEdit by remember { mutableStateOf<Goal?>(null) }
 
-    Scaffold(containerColor = Color.Transparent) { padding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(horizontal = 20.dp, vertical = 16.dp)
-        ) {
-            item {
-                Text(
-                    text = "Savings targets & milestones",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = KapeBrownSoft,
-                    modifier = Modifier.padding(bottom = 16.dp)
-                )
+    Scaffold(
+        containerColor = RicePaper,
+        floatingActionButton = {
+            // Re-using the FAB for quick creation
+            androidx.compose.material3.FloatingActionButton(
+                onClick = { showCreateDialog = true },
+                containerColor = JeepneyOrange,
+                shape = CircleShape
+            ) {
+                Icon(Icons.Default.Add, contentDescription = "New Goal", tint = Color.White)
             }
+        }
+    ) { padding ->
+        if (uiState.isLoading) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = OceanTeal)
+            }
+        } else {
+            val activeGoals = uiState.goals.filter { !it.goal.isArchived }
+            val totalSaved = Money.ofMinorUnits(activeGoals.sumOf { it.saved.minorUnits })
 
-            // 2. Beautiful Savings Overview Hero Card
-            if (uiState.goals.isNotEmpty()) {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+            ) {
+                // 1. HERO SECTION: "Total Savings" and Pockets Row
                 item {
-                    val activeGoalsCount = uiState.goals.size
-                    val totalSaved = Money.ofMinorUnits(uiState.goals.sumOf { it.saved.minorUnits })
-                    val totalTarget = Money.ofMinorUnits(uiState.goals.sumOf { it.goal.target.minorUnits })
-                    val averageFraction = if (totalTarget.isZero) 0f else totalSaved.minorUnits.toFloat() / totalTarget.minorUnits.toFloat()
-
-                    Card(
+                    Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(bottom = 20.dp),
-                        shape = OrganicSquircleShape,
-                        colors = CardDefaults.cardColors(containerColor = OceanTeal),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                            .padding(vertical = 24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Column(modifier = Modifier.padding(20.dp)) {
-                            Text(
-                                text = "TOTAL SAVED BALANCE",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = RicePaper.copy(alpha = 0.75f)
-                            )
-                            Text(
-                                text = totalSaved.formatPhp(),
-                                style = MaterialTheme.typography.headlineLarge.merge(TabularNumberStyle),
-                                color = RicePaper,
-                                modifier = Modifier.padding(top = 4.dp)
-                            )
-                            Text(
-                                text = "Across $activeGoalsCount active savings goal${if (activeGoalsCount == 1) "" else "s"} (Target: ${totalTarget.formatPhp()})",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = RicePaper.copy(alpha = 0.8f),
-                                modifier = Modifier.padding(top = 4.dp)
-                            )
+                        Text(
+                            text = "Total savings",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = KapeBrownSoft
+                        )
+                        Text(
+                            text = "Php $totalSaved",
+                            fontSize = 36.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = KapeBrown,
+                            modifier = Modifier.padding(top = 4.dp, bottom = 24.dp)
+                        )
 
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = "Overall Progress",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = RicePaper
-                                )
-                                Text(
-                                    text = "${(averageFraction * 100).toInt()}%",
-                                    style = MaterialTheme.typography.bodyMedium.merge(TabularNumberStyle),
-                                    color = RicePaper,
-                                    fontWeight = FontWeight.Bold
+                        // Horizontally scrollable row of Goal Ring Avatars
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState())
+                                .padding(horizontal = 24.dp),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            activeGoals.forEach { progress ->
+                                GoalPocketChip(
+                                    progress = progress,
+                                    onClick = { selectedGoalForAdd = progress.goal }
                                 )
                             }
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 8.dp)
-                                    .height(6.dp)
-                                    .clip(CircleShape)
-                                    .background(RicePaper.copy(alpha = 0.2f))
+                            
+                            // The "Add New" circular button at the end
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier.clickable { showCreateDialog = true }
                             ) {
                                 Box(
                                     modifier = Modifier
-                                        .fillMaxWidth(fraction = averageFraction.coerceIn(0f, 1f))
-                                        .height(6.dp)
+                                        .size(56.dp)
                                         .clip(CircleShape)
-                                        .background(JeepneyOrange)
-                                )
+                                        .background(OceanTeal.copy(alpha = 0.1f)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(Icons.Default.Add, contentDescription = null, tint = OceanTeal)
+                                }
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text("New", fontSize = 12.sp, color = KapeBrownSoft)
                             }
                         }
                     }
                 }
-            }
 
-            // 3. Goals List Title Header
-            if (uiState.goals.isNotEmpty()) {
-                item {
-                    Text(
-                        text = "Active Goals",
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = KapeBrown,
-                        modifier = Modifier.padding(bottom = 12.dp)
-                    )
-                }
-            }
-
-            // 4. Empty State
-            if (uiState.goals.isEmpty() && !uiState.isLoading) {
-                item {
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 12.dp)
-                            .border(1.dp, HairlineBorder, OrganicSquircleShape),
-                        shape = OrganicSquircleShape,
-                        colors = CardDefaults.cardColors(containerColor = WarmCream),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-                    ) {
-                        Column(
+                // 2. LIST SECTION: Active Goals
+                if (activeGoals.isEmpty()) {
+                    item {
+                        Text(
+                            text = "No active goals. Tap + to start saving.",
+                            color = KapeBrownSoft,
+                            textAlign = TextAlign.Center,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(32.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            androidx.compose.material3.Icon(
-                                imageVector = com.ipon.app.ui.icons.IponIcons.Alkansya,
-                                contentDescription = null,
-                                modifier = Modifier.size(64.dp),
-                                tint = KapeBrown.copy(alpha = 0.12f)
-                            )
-                            Spacer(modifier = Modifier.height(12.dp))
-                            Text(
-                                text = "Start an Ipon Goal",
-                                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                                color = KapeBrown,
-                                modifier = Modifier.padding(bottom = 8.dp)
-                            )
-                            Text(
-                                text = "Set targets for a motorcycle, an emergency fund, travels, or anything you're saving for. Track progress step-by-step.",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = KapeBrownSoft,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.padding(horizontal = 16.dp)
-                            )
-                        }
+                                .padding(32.dp)
+                        )
+                    }
+                } else {
+                    items(activeGoals) { progress ->
+                        GoalCard(
+                            progress = progress,
+                            onAddClick = { selectedGoalForAdd = progress.goal },
+                            onEditClick = { selectedGoalForEdit = progress.goal }
+                        )
                     }
                 }
-            }
-
-            // 5. Goals List
-            items(uiState.goals, key = { it.goal.id }) { progress ->
-                GoalCard(
-                    progress = progress,
-                    onAddMoney = { contributingTo = progress.goal },
-                    onEditGoal = { editingGoal = progress.goal },
-                    onManageGoal = { managingGoal = progress.goal },
-                    modifier = Modifier.padding(bottom = 16.dp)
-                )
-            }
-
-            // 6. Action Button
-            item {
-                Button(
-                    onClick = { showCreateDialog = true },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp, bottom = 80.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = OceanTeal),
-                    shape = IponShapes.SquircleLg,
-                    contentPadding = PaddingValues(vertical = 14.dp)
-                ) {
-                    Text(text = "+ Set a New Savings Goal", style = MaterialTheme.typography.labelLarge, color = Color.White)
-                }
+                
+                item { Spacer(modifier = Modifier.height(80.dp)) }
             }
         }
     }
 
-    // --- DIALOGS ---
-
-    contributingTo?.let { goal ->
-        AddContributionDialog(
-            goal = goal,
-            haptics = haptics,
-            onConfirm = { amount ->
-                viewModel.addContribution(goal, amount, note = null)
-                haptics.onTransactionSaved(amount, Money.ZERO)
-                contributingTo = null
-            },
-            onDismiss = { contributingTo = null }
-        )
-    }
-
     if (showCreateDialog) {
         CreateGoalDialog(
-            haptics = haptics,
-            onConfirm = { label, target, emoji, deadline ->
-                viewModel.createGoal(label, target, emoji, deadline)
+            onDismiss = { showCreateDialog = false },
+            onConfirm = { label, target, emoji, deadline, uri ->
+                viewModel.createGoal(label, target, emoji, deadline, uri)
                 showCreateDialog = false
-            },
-            onDismiss = { showCreateDialog = false }
+            }
         )
     }
 
-    editingGoal?.let { goal ->
+    selectedGoalForAdd?.let { goal ->
+        AddContributionDialog(
+            goal = goal,
+            onDismiss = { selectedGoalForAdd = null },
+            onConfirm = { amount, note ->
+                viewModel.addContribution(goal, amount, note)
+                selectedGoalForAdd = null
+            }
+        )
+    }
+
+    selectedGoalForEdit?.let { goal ->
         EditGoalDialog(
             goal = goal,
-            haptics = haptics,
-            onConfirm = { label, target, emoji, deadline ->
-                viewModel.updateGoal(goal.copy(label = label, target = target, emoji = emoji, deadline = deadline))
-                editingGoal = null
+            onDismiss = { selectedGoalForEdit = null },
+            onConfirm = { updatedGoal ->
+                viewModel.updateGoal(updatedGoal)
+                selectedGoalForEdit = null
             },
-            onDismiss = { editingGoal = null }
+            onArchive = {
+                viewModel.archiveGoal(goal)
+                selectedGoalForEdit = null
+            },
+            onDelete = {
+                viewModel.deleteGoal(goal)
+                selectedGoalForEdit = null
+            }
         )
     }
+}
 
-    managingGoal?.let { goal ->
-        ManageGoalDialog(
-            goal = goal,
-            onArchive = { viewModel.archiveGoal(goal); managingGoal = null },
-            onDelete = { 
-                haptics.onDeleteConfirmed()
-                viewModel.deleteGoal(goal)
-                managingGoal = null 
-            },
-            onDismiss = { managingGoal = null }
+@Composable
+private fun GoalPocketChip(progress: GoalProgress, onClick: () -> Unit) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.clickable { onClick() }
+    ) {
+        GoalRingAvatar(
+            imageUri = progress.goal.imageUri,
+            emoji = progress.goal.emoji,
+            progress = progress.fraction,
+            size = 56.dp,
+            strokeWidth = 3.dp
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = progress.goal.label,
+            fontSize = 12.sp,
+            color = KapeBrown,
+            fontWeight = FontWeight.Medium,
+            maxLines = 1
         )
     }
 }
@@ -274,270 +253,210 @@ fun GoalsScreen(viewModelFactory: IponViewModelFactory) {
 @Composable
 private fun GoalCard(
     progress: GoalProgress,
-    onAddMoney: () -> Unit,
-    onEditGoal: () -> Unit,
-    onManageGoal: () -> Unit,
-    modifier: Modifier = Modifier
+    onAddClick: () -> Unit,
+    onEditClick: () -> Unit
 ) {
     Card(
-        modifier = modifier
+        modifier = Modifier
             .fillMaxWidth()
-            .border(1.dp, HairlineBorder, OrganicSquircleShape),
-        shape = OrganicSquircleShape,
-        colors = CardDefaults.cardColors(containerColor = WarmCream),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+            .padding(horizontal = 24.dp, vertical = 8.dp)
+            .clickable { onEditClick() },
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        shape = IponShapes.SquircleLg
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            // Header Row: Emoji badge, label, and percentage tag
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(44.dp)
-                            .clip(IponShapes.SquircleSm)
-                            .background(OceanTeal.copy(alpha = 0.08f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.Flag,
-                            contentDescription = null,
-                            tint = OceanTeal,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column {
-                        Text(
-                            text = progress.goal.label,
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                            color = KapeBrown
-                        )
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Text(
-                                text = if (progress.isComplete) "Goal reached!" else "${progress.remaining.formatPhp()} to go",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = if (progress.isComplete) OceanTeal else KapeBrownSoft
-                            )
-                            if (!progress.isComplete && !progress.goal.deadline.isNullOrBlank()) {
-                                Text(
-                                    text = "•",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = KapeBrownSoft
-                                )
-                                Text(
-                                    text = "📅 ${progress.goal.deadline}",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = Terracotta,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                            }
-                        }
-                    }
-                }
-
-                // Percentage Pill
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(if (progress.isComplete) Color(0xFFE0F2F1) else Color(0xFFFFF3E0))
-                        .padding(horizontal = 10.dp, vertical = 6.dp)
-                ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            GoalRingAvatar(
+                imageUri = progress.goal.imageUri,
+                emoji = progress.goal.emoji,
+                progress = progress.fraction,
+                size = 48.dp
+            )
+            
+            Spacer(modifier = Modifier.width(16.dp))
+            
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = progress.goal.label,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = KapeBrown,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "Php ${progress.saved} / Php ${progress.goal.target}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = KapeBrownSoft
+                )
+                progress.goal.deadline?.let {
                     Text(
-                        text = "${(progress.fraction * 100).toInt()}%",
+                        text = "Target: $it",
                         style = MaterialTheme.typography.labelSmall,
-                        color = if (progress.isComplete) OceanTeal else JeepneyOrange,
-                        fontWeight = FontWeight.Bold
+                        color = OceanTeal,
+                        modifier = Modifier.padding(top = 2.dp)
                     )
                 }
             }
-
-            Spacer(modifier = Modifier.height(14.dp))
-
-            // Progress bar
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(10.dp)
-                    .clip(CircleShape)
-                    .background(RicePaperDeep)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth(fraction = progress.fraction.coerceIn(0f, 1f))
-                        .height(10.dp)
-                        .clip(CircleShape)
-                        .background(if (progress.isComplete) OceanTeal else JeepneyOrange)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            // Numerical Progress Details
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "${progress.saved.formatPhp()} of ${progress.goal.target.formatPhp()}",
-                    style = MaterialTheme.typography.bodyMedium.merge(TabularNumberStyle),
-                    color = KapeBrownSoft
-                )
-                
-                // Action Buttons Row
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    // Edit Target icon button
-                    IconButton(
-                        onClick = onEditGoal,
-                        modifier = Modifier.size(36.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Edit,
-                            contentDescription = "Edit Target Amount",
-                            tint = KapeBrownSoft,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-                    
-                    // Manage / Settings icon button
-                    IconButton(
-                        onClick = onManageGoal,
-                        modifier = Modifier.size(36.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Settings,
-                            contentDescription = "Goal Actions",
-                            tint = KapeBrownSoft,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-                    
-                    Spacer(modifier = Modifier.width(4.dp))
-                    
-                    TextButton(
-                        onClick = onAddMoney,
-                        colors = ButtonDefaults.textButtonColors(contentColor = OceanTeal),
-                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
-                    ) {
-                        Text("+ Add Money", style = MaterialTheme.typography.labelLarge)
-                    }
+            
+            if (!progress.isComplete) {
+                OutlinedButton(
+                    onClick = onAddClick,
+                    shape = IponShapes.SquircleSm
+                ) {
+                    Text("+ Add", color = OceanTeal, fontWeight = FontWeight.Bold)
                 }
+            } else {
+                Icon(
+                    Icons.Default.Add, // Using Add as a placeholder for a checkmark here if desired
+                    contentDescription = "Done",
+                    tint = OceanTeal,
+                    modifier = Modifier.padding(8.dp)
+                )
             }
         }
     }
 }
 
 @Composable
-private fun AddContributionDialog(
-    goal: Goal,
-    haptics: com.ipon.app.util.HapticFeedbackManager,
-    onConfirm: (Money) -> Unit,
-    onDismiss: () -> Unit
+private fun GoalAppearancePicker(
+    currentEmoji: String,
+    currentUri: String?,
+    onEmojiSelected: (String) -> Unit,
+    onUriSelected: (String?) -> Unit
 ) {
-    var input by remember { mutableStateOf("") }
-    var error by remember { mutableStateOf<String?>(null) }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Add to ${goal.label}", color = KapeBrown, fontWeight = FontWeight.Bold) },
-        text = {
-            OutlinedTextField(
-                value = input,
-                onValueChange = { input = it; error = null },
-                label = { Text("Amount (₱)") },
-                isError = error != null,
-                supportingText = error?.let { errorText -> { Text(errorText) } },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
-        },
-        confirmButton = {
-            TextButton(onClick = {
-                val amount = Money.parse(input)
-                if (amount == null || amount.isZero || amount.isNegative) {
-                    error = "Enter a valid amount"
-                    haptics.onValidationError()
-                } else {
-                    onConfirm(amount)
-                }
-            }) {
-                Text("Add", color = OceanTeal, fontWeight = FontWeight.Bold)
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel", color = KapeBrownSoft) }
+    val commonEmojis = listOf("🎯", "🏍️", "🏖️", "💻", "🏠", "💍", "✈️", "🎓")
+    
+    // Launch Android's native secure Photo Picker
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        if (uri != null) {
+            onUriSelected(uri.toString())
         }
-    )
+    }
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text("Appearance", style = MaterialTheme.typography.labelSmall, color = KapeBrownSoft)
+        Spacer(modifier = Modifier.height(8.dp))
+        
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Goal Preview Ring
+            GoalRingAvatar(
+                imageUri = currentUri,
+                emoji = currentEmoji,
+                progress = 0.3f, // Mock progress for the preview
+                size = 56.dp
+            )
+            
+            // Emoji quick selects
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                commonEmojis.take(4).forEach { emoji ->
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .background(if (currentEmoji == emoji && currentUri == null) OceanTeal.copy(alpha = 0.1f) else Color.Transparent)
+                            .clickable {
+                                onEmojiSelected(emoji)
+                                onUriSelected(null) // Clear photo if an emoji is picked
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(emoji, fontSize = 20.sp)
+                    }
+                }
+            }
+
+            // Photo Button
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(OceanTeal.copy(alpha = 0.1f))
+                    .clickable { 
+                        photoPickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(Icons.Default.Image, contentDescription = "Pick Photo", tint = OceanTeal, modifier = Modifier.size(20.dp))
+            }
+        }
+    }
 }
 
 @Composable
-private fun CreateGoalDialog(
-    haptics: com.ipon.app.util.HapticFeedbackManager,
-    onConfirm: (label: String, target: Money, emoji: String, deadline: String?) -> Unit,
-    onDismiss: () -> Unit
+fun CreateGoalDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (label: String, target: Money, emoji: String, deadline: String?, imageUri: String?) -> Unit
 ) {
     var label by remember { mutableStateOf("") }
-    var targetInput by remember { mutableStateOf("") }
-    var deadlineInput by remember { mutableStateOf("") }
-    var selectedEmoji by remember { mutableStateOf(GOAL_EMOJI_CHOICES.first()) }
-    var error by remember { mutableStateOf<String?>(null) }
+    var target by remember { mutableStateOf("") }
+    var deadline by remember { mutableStateOf("") }
+    var selectedEmoji by remember { mutableStateOf("🎯") }
+    var selectedImageUri by remember { mutableStateOf<String?>(null) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Set a New Savings Goal", color = KapeBrown, fontWeight = FontWeight.Bold) },
+        containerColor = RicePaper,
+        shape = IponShapes.SquircleLg,
+        title = { Text("New Goal", color = KapeBrown, fontWeight = FontWeight.Bold) },
         text = {
-            Column {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                GoalAppearancePicker(
+                    currentEmoji = selectedEmoji,
+                    currentUri = selectedImageUri,
+                    onEmojiSelected = { selectedEmoji = it },
+                    onUriSelected = { selectedImageUri = it }
+                )
+                
                 OutlinedTextField(
                     value = label,
                     onValueChange = { label = it },
                     label = { Text("What are you saving for?") },
+                    singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
                 OutlinedTextField(
-                    value = targetInput,
-                    onValueChange = { targetInput = it; error = null },
-                    label = { Text("Target amount (₱)") },
-                    isError = error != null,
-                    supportingText = error?.let { errorText -> { Text(errorText) } },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 10.dp)
+                    value = target,
+                    onValueChange = { target = it },
+                    label = { Text("Target Amount (Php)") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
                 )
                 OutlinedTextField(
-                    value = deadlineInput,
-                    onValueChange = { deadlineInput = it },
-                    label = { Text("Target Deadline (optional, e.g. Dec 2026)") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 10.dp),
-                    placeholder = { Text("e.g. Dec 2026, or 2026-12-31") }
+                    value = deadline,
+                    onValueChange = { deadline = it },
+                    label = { Text("Deadline (e.g. Dec 2026) - Optional") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
         },
         confirmButton = {
-            TextButton(onClick = {
-                val target = Money.parse(targetInput)
-                if (target == null || target.isZero || target.isNegative) {
-                    error = "Enter a valid target amount"
-                    haptics.onValidationError()
-                } else if (label.isBlank()) {
-                    error = "Give it a name"
-                    haptics.onValidationError()
-                } else {
-                    onConfirm(label, target, "🎯", deadlineInput.takeIf { it.isNotBlank() })
-                }
-            }) {
-                Text("Create", color = OceanTeal, fontWeight = FontWeight.Bold)
+            Button(
+                onClick = {
+                    val amount = target.toLongOrNull() ?: 0L
+                    if (label.isNotBlank() && amount > 0L) {
+                        onConfirm(
+                            label,
+                            Money.ofMinorUnits(amount * 100),
+                            selectedEmoji,
+                            deadline.takeIf { it.isNotBlank() },
+                            selectedImageUri
+                        )
+                    }
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = OceanTeal)
+            ) {
+                Text("Create Goal", color = Color.White)
             }
         },
         dismissButton = {
@@ -547,98 +466,132 @@ private fun CreateGoalDialog(
 }
 
 @Composable
-private fun EditGoalDialog(
+fun EditGoalDialog(
     goal: Goal,
-    haptics: com.ipon.app.util.HapticFeedbackManager,
-    onConfirm: (label: String, target: Money, emoji: String, deadline: String?) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onConfirm: (Goal) -> Unit,
+    onArchive: () -> Unit,
+    onDelete: () -> Unit
 ) {
     var label by remember { mutableStateOf(goal.label) }
-    var targetInput by remember { mutableStateOf((goal.target.minorUnits / 100.0).toString()) }
-    var deadlineInput by remember { mutableStateOf(goal.deadline ?: "") }
+    var target by remember { mutableStateOf((goal.target.minorUnits / 100).toString()) }
+    var deadline by remember { mutableStateOf(goal.deadline ?: "") }
     var selectedEmoji by remember { mutableStateOf(goal.emoji) }
-    var error by remember { mutableStateOf<String?>(null) }
+    var selectedImageUri by remember { mutableStateOf(goal.imageUri) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Edit Goal Details", color = KapeBrown, fontWeight = FontWeight.Bold) },
+        containerColor = RicePaper,
+        shape = IponShapes.SquircleLg,
+        title = { Text("Edit Goal", color = KapeBrown, fontWeight = FontWeight.Bold) },
         text = {
-            Column {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                GoalAppearancePicker(
+                    currentEmoji = selectedEmoji,
+                    currentUri = selectedImageUri,
+                    onEmojiSelected = { selectedEmoji = it },
+                    onUriSelected = { selectedImageUri = it }
+                )
+                
                 OutlinedTextField(
                     value = label,
                     onValueChange = { label = it },
-                    label = { Text("What are you saving for?") },
+                    label = { Text("Label") },
+                    singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
                 OutlinedTextField(
-                    value = targetInput,
-                    onValueChange = { targetInput = it; error = null },
-                    label = { Text("Target amount (₱)") },
-                    isError = error != null,
-                    supportingText = error?.let { errorText -> { Text(errorText) } },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 10.dp)
+                    value = target,
+                    onValueChange = { target = it },
+                    label = { Text("Target Amount (Php)") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
                 )
                 OutlinedTextField(
-                    value = deadlineInput,
-                    onValueChange = { deadlineInput = it },
-                    label = { Text("Target Deadline (optional, e.g. Dec 2026)") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 10.dp),
-                    placeholder = { Text("e.g. Dec 2026, or 2026-12-31") }
+                    value = deadline,
+                    onValueChange = { deadline = it },
+                    label = { Text("Deadline") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
         },
         confirmButton = {
-            TextButton(onClick = {
-                val target = Money.parse(targetInput)
-                if (target == null || target.isZero || target.isNegative) {
-                    error = "Enter a valid target amount"
-                    haptics.onValidationError()
-                } else if (label.isBlank()) {
-                    error = "Give it a name"
-                    haptics.onValidationError()
-                } else {
-                    onConfirm(label, target, "🎯", deadlineInput.takeIf { it.isNotBlank() })
-                }
-            }) {
-                Text("Save Changes", color = OceanTeal, fontWeight = FontWeight.Bold)
+            Button(
+                onClick = {
+                    val amount = target.toLongOrNull() ?: 0L
+                    if (label.isNotBlank() && amount > 0L) {
+                        onConfirm(
+                            goal.copy(
+                                label = label,
+                                target = Money.ofMinorUnits(amount * 100),
+                                emoji = selectedEmoji,
+                                deadline = deadline.takeIf { it.isNotBlank() },
+                                imageUri = selectedImageUri
+                            )
+                        )
+                    }
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = OceanTeal)
+            ) {
+                Text("Save", color = Color.White)
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel", color = KapeBrownSoft) }
+            TextButton(onClick = onDelete) { Text("Delete", color = JeepneyOrange) }
         }
     )
 }
 
 @Composable
-private fun ManageGoalDialog(
+fun AddContributionDialog(
     goal: Goal,
-    onArchive: () -> Unit,
-    onDelete: () -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onConfirm: (amount: Money, note: String?) -> Unit
 ) {
+    var amount by remember { mutableStateOf("") }
+    var note by remember { mutableStateOf("") }
+
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(goal.label, color = KapeBrown, fontWeight = FontWeight.Bold) },
+        containerColor = RicePaper,
+        shape = IponShapes.SquircleLg,
+        title = { Text("Add to ${goal.label}", color = KapeBrown, fontWeight = FontWeight.Bold) },
         text = {
-            Text(
-                text = "Archiving keeps your contribution history but hides this goal from the active list. Deleting removes the goal and all its logged contributions permanently.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = KapeBrownSoft
-            )
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(
+                    value = amount,
+                    onValueChange = { amount = it },
+                    label = { Text("Amount (Php)") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = note,
+                    onValueChange = { note = it },
+                    label = { Text("Note (Optional)") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
         },
         confirmButton = {
-            TextButton(onClick = onArchive) { Text("Archive Goal", color = OceanTeal, fontWeight = FontWeight.Bold) }
+            Button(
+                onClick = {
+                    val parsed = amount.toLongOrNull() ?: 0L
+                    if (parsed > 0L) {
+                        onConfirm(Money.ofMinorUnits(parsed * 100), note.takeIf { it.isNotBlank() })
+                    }
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = OceanTeal)
+            ) {
+                Text("Add Funds", color = Color.White)
+            }
         },
         dismissButton = {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                TextButton(onClick = onDelete) { Text("Delete Permanently", color = Terracotta, fontWeight = FontWeight.Bold) }
-                Spacer(modifier = Modifier.width(8.dp))
-                TextButton(onClick = onDismiss) { Text("Cancel", color = KapeBrownSoft) }
-            }
+            TextButton(onClick = onDismiss) { Text("Cancel", color = KapeBrownSoft) }
         }
     )
 }
