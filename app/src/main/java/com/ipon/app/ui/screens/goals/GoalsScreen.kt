@@ -115,7 +115,7 @@ fun GoalsScreen(viewModelFactory: IponViewModelFactory) {
                             color = KapeBrownSoft
                         )
                         Text(
-                            text = "Php $totalSaved",
+                            text = totalSaved.formatPhp(),
                             fontSize = 36.sp,
                             fontWeight = FontWeight.Bold,
                             color = KapeBrown,
@@ -287,7 +287,7 @@ private fun GoalCard(
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = "Php ${progress.saved} / Php ${progress.goal.target}",
+                    text = "${progress.saved.formatPhp()} / ${progress.goal.target.formatPhp()}",
                     style = MaterialTheme.typography.bodySmall,
                     color = KapeBrownSoft
                 )
@@ -478,6 +478,7 @@ fun EditGoalDialog(
     var deadline by remember { mutableStateOf(goal.deadline ?: "") }
     var selectedEmoji by remember { mutableStateOf(goal.emoji) }
     var selectedImageUri by remember { mutableStateOf(goal.imageUri) }
+    var showDeleteConfirm by remember { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -515,6 +516,18 @@ fun EditGoalDialog(
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    TextButton(onClick = onArchive) {
+                        Text("Archive", color = OceanTeal)
+                    }
+                    TextButton(onClick = { showDeleteConfirm = true }) {
+                        Text("Delete", color = JeepneyOrange)
+                    }
+                }
             }
         },
         confirmButton = {
@@ -539,9 +552,30 @@ fun EditGoalDialog(
             }
         },
         dismissButton = {
-            TextButton(onClick = onDelete) { Text("Delete", color = JeepneyOrange) }
+            TextButton(onClick = onDismiss) { Text("Cancel", color = KapeBrownSoft) }
         }
     )
+
+    if (showDeleteConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirm = false },
+            title = { Text("Delete this goal?") },
+            text = { Text("This removes \"${goal.label}\" and its saved-contribution history permanently. This cannot be undone. If you just want to stop it showing up, Archive is the reversible option instead.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showDeleteConfirm = false
+                    onDelete()
+                }) {
+                    Text("Delete", color = JeepneyOrange)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirm = false }) {
+                    Text("Cancel", color = KapeBrownSoft)
+                }
+            }
+        )
+    }
 }
 
 @Composable
