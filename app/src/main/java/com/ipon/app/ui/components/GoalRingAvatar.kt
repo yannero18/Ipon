@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -79,10 +80,27 @@ fun GoalRingAvatar(
                     modifier = Modifier.fillMaxSize()
                 )
             } else {
-                Text(
-                    text = emoji,
-                    fontSize = (size.value * 0.4f).sp
-                )
+                val iconChoice = GoalIconCatalog.find(emoji)
+                if (iconChoice != null) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(iconChoice.accentColor.copy(alpha = 0.14f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = iconChoice.icon,
+                            contentDescription = null,
+                            tint = iconChoice.accentColor,
+                            modifier = Modifier.size(size * 0.42f)
+                        )
+                    }
+                } else {
+                    Text(
+                        text = emoji,
+                        fontSize = (size.value * 0.4f).sp
+                    )
+                }
             }
         }
     }

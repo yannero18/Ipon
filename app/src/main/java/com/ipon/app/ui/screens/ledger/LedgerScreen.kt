@@ -8,8 +8,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.ArrowDownward
@@ -30,6 +33,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -64,6 +68,7 @@ fun LedgerScreen(
 ) {
     val viewModel: LedgerViewModel = viewModel(factory = viewModelFactory)
     val uiState by viewModel.uiState.collectAsState()
+    val quickAddState by viewModel.quickAddState.collectAsState()
 
     var showQuickDepositDialog by remember { mutableStateOf(false) }
     var showQuickWithdrawalDialog by remember { mutableStateOf(false) }
@@ -205,6 +210,20 @@ fun LedgerScreen(
                     accountName = uiState.accountName,
                     daysUntilPayday = uiState.daysUntilPayday,
                     safeDailySpend = uiState.safeDailySpend
+                )
+            }
+
+            // 2b. Tarsi-style one-line quick add: "250 Grab", "+500 sweldo"
+            item {
+                QuickAddBar(
+                    quickAddState = quickAddState,
+                    onTextChanged = viewModel::onQuickAddTextChanged,
+                    onSubmit = {
+                        quickAddState.amountInput
+                            ?.let { Money.parse(it) }
+                            ?.let { haptics.onTransactionSaved(it) }
+                        viewModel.submitQuickAdd()
+                    }
                 )
             }
 
@@ -1168,6 +1187,98 @@ private fun EnvelopeAllocationRow(
                 color = if (cap.isZero) KapeBrownSoft else OceanTeal,
                 fontWeight = FontWeight.Bold
             )
+        }
+    }
+}
+
+/**
+ * Tarsi-style one-line quick entry: type "250 Grab" or "+500 sweldo" and
+ * hit the check button. Parsing and category matching happen live as you
+ * type (see LedgerViewModel.onQuickAddTextChanged) so the preview row below
+ * the field always reflects exactly what submitting right now would save --
+ * no surprises between what you typed and what lands in the ledger.
+ */
+@Composable
+private fun QuickAddBar(
+    quickAddState: QuickAddUiState,
+    onTextChanged: (String) -> Unit,
+    onSubmit: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = IponShapes.SquircleLg,
+        colors = CardDefaults.cardColors(containerColor = RicePaperDeep),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                OutlinedTextField(
+                    value = quickAddState.text,
+                    onValueChange = onTextChanged,
+                    modifier = Modifier.weight(1f),
+                    placeholder = {
+                        Text(
+                            "Quick add: 250 Grab, +500 sweldo",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    },
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = OceanTeal,
+                        unfocusedBorderColor = HairlineBorder,
+                        cursorColor = OceanTeal
+                    ),
+                    shape = IponShapes.SquircleSm,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = {
+                        if (quickAddState.isValid) onSubmit()
+                    })
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Box(
+                    modifier = Modifier
+                        .size(44.dp)
+                        .clip(CircleShape)
+                        .background(if (quickAddState.isValid) OceanTeal else HairlineBorder)
+                        .clickable(enabled = quickAddState.isValid) { onSubmit() },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Check,
+                        contentDescription = "Add transaction",
+                        tint = Color.White
+                    )
+                }
+            }
+
+            if (quickAddState.isValid) {
+                Spacer(modifier = Modifier.height(10.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    val amount = Money.parse(quickAddState.amountInput ?: "") ?: Money.ZERO
+                    val isIncome = quickAddState.type == TransactionType.INCOME
+                    Text(
+                        text = (if (isIncome) "+" else "-") + amount.formatPhp(),
+                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                        color = if (isIncome) OceanTeal else Terracotta
+                    )
+                    Spacer(modifier = Modifier.width(10.dp))
+                    val category = quickAddState.category
+                    when {
+                        category != null -> CategoryLabel(
+                            category = category,
+                            iconSize = 14.dp,
+                            style = MaterialTheme.typography.bodySmall,
+                            textColor = KapeBrownSoft
+                        )
+                        !quickAddState.merchantText.isNullOrBlank() -> Text(
+                            text = quickAddState.merchantText,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = KapeBrownSoft
+                        )
+                    }
+                }
+            }
         }
     }
 }

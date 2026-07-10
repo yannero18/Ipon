@@ -1,8 +1,5 @@
 package com.ipon.app.ui.screens.goals
 
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.PickVisualMediaRequest
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -21,23 +18,20 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Image
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -49,7 +43,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -66,21 +59,33 @@ import com.ipon.app.ui.theme.OceanTeal
 import com.ipon.app.ui.theme.RicePaper
 import com.ipon.app.util.Money
 
+/**
+ * The Goals list/hub: a "Total savings" hero, a horizontally scrollable row
+ * of ring-avatar pockets (GoTyme's Go Save look), and the full list below.
+ * Create and Edit are now real screens reached via [onCreateGoalClick] and
+ * tapping into [onGoalClick] rather than AlertDialogs, matching the rest of
+ * the app's full-screen forms. "Add funds" stays a quick in-place
+ * ModalBottomSheet here -- fast enough for a one-off top-up without leaving
+ * the list -- while the same sheet content is reused from
+ * [GoalDetailScreen] for the full drill-down view.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun GoalsScreen(viewModelFactory: IponViewModelFactory) {
+fun GoalsScreen(
+    viewModelFactory: IponViewModelFactory,
+    onCreateGoalClick: () -> Unit,
+    onGoalClick: (String) -> Unit
+) {
     val viewModel: GoalsViewModel = viewModel(factory = viewModelFactory)
     val uiState by viewModel.uiState.collectAsState()
 
-    var showCreateDialog by remember { mutableStateOf(false) }
     var selectedGoalForAdd by remember { mutableStateOf<Goal?>(null) }
-    var selectedGoalForEdit by remember { mutableStateOf<Goal?>(null) }
 
     Scaffold(
         containerColor = RicePaper,
         floatingActionButton = {
-            // Re-using the FAB for quick creation
-            androidx.compose.material3.FloatingActionButton(
-                onClick = { showCreateDialog = true },
+            FloatingActionButton(
+                onClick = onCreateGoalClick,
                 containerColor = JeepneyOrange,
                 shape = CircleShape
             ) {
@@ -122,7 +127,6 @@ fun GoalsScreen(viewModelFactory: IponViewModelFactory) {
                             modifier = Modifier.padding(top = 4.dp, bottom = 24.dp)
                         )
 
-                        // Horizontally scrollable row of Goal Ring Avatars
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -133,14 +137,13 @@ fun GoalsScreen(viewModelFactory: IponViewModelFactory) {
                             activeGoals.forEach { progress ->
                                 GoalPocketChip(
                                     progress = progress,
-                                    onClick = { selectedGoalForAdd = progress.goal }
+                                    onClick = { onGoalClick(progress.goal.id) }
                                 )
                             }
-                            
-                            // The "Add New" circular button at the end
+
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally,
-                                modifier = Modifier.clickable { showCreateDialog = true }
+                                modifier = Modifier.clickable { onCreateGoalClick() }
                             ) {
                                 Box(
                                     modifier = Modifier
@@ -171,58 +174,36 @@ fun GoalsScreen(viewModelFactory: IponViewModelFactory) {
                         )
                     }
                 } else {
-                    items(activeGoals) { progress ->
+                    items(activeGoals, key = { it.goal.id }) { progress ->
                         GoalCard(
                             progress = progress,
                             onAddClick = { selectedGoalForAdd = progress.goal },
-                            onEditClick = { selectedGoalForEdit = progress.goal }
+                            onClick = { onGoalClick(progress.goal.id) }
                         )
                     }
                 }
-                
+
                 item { Spacer(modifier = Modifier.height(80.dp)) }
             }
         }
     }
 
-    if (showCreateDialog) {
-        CreateGoalDialog(
-            onDismiss = { showCreateDialog = false },
-            onConfirm = { label, target, emoji, deadline, uri ->
-                viewModel.createGoal(label, target, emoji, deadline, uri)
-                showCreateDialog = false
-            }
-        )
-    }
-
     selectedGoalForAdd?.let { goal ->
-        AddContributionDialog(
-            goal = goal,
-            onDismiss = { selectedGoalForAdd = null },
-            onConfirm = { amount, note ->
-                viewModel.addContribution(goal, amount, note)
-                selectedGoalForAdd = null
-            }
-        )
-    }
-
-    selectedGoalForEdit?.let { goal ->
-        EditGoalDialog(
-            goal = goal,
-            onDismiss = { selectedGoalForEdit = null },
-            onConfirm = { updatedGoal ->
-                viewModel.updateGoal(updatedGoal)
-                selectedGoalForEdit = null
-            },
-            onArchive = {
-                viewModel.archiveGoal(goal)
-                selectedGoalForEdit = null
-            },
-            onDelete = {
-                viewModel.deleteGoal(goal)
-                selectedGoalForEdit = null
-            }
-        )
+        val sheetState = rememberModalBottomSheetState()
+        ModalBottomSheet(
+            onDismissRequest = { selectedGoalForAdd = null },
+            sheetState = sheetState,
+            containerColor = RicePaper
+        ) {
+            AddFundsSheetContent(
+                goalLabel = goal.label,
+                onConfirm = { amount, note ->
+                    viewModel.addContribution(goal, amount, note)
+                    selectedGoalForAdd = null
+                },
+                onCancel = { selectedGoalForAdd = null }
+            )
+        }
     }
 }
 
@@ -254,13 +235,13 @@ private fun GoalPocketChip(progress: GoalProgress, onClick: () -> Unit) {
 private fun GoalCard(
     progress: GoalProgress,
     onAddClick: () -> Unit,
-    onEditClick: () -> Unit
+    onClick: () -> Unit
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 24.dp, vertical = 8.dp)
-            .clickable { onEditClick() },
+            .clickable { onClick() },
         colors = CardDefaults.cardColors(containerColor = Color.White),
         shape = IponShapes.SquircleLg
     ) {
@@ -276,9 +257,9 @@ private fun GoalCard(
                 progress = progress.fraction,
                 size = 48.dp
             )
-            
+
             Spacer(modifier = Modifier.width(16.dp))
-            
+
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = progress.goal.label,
@@ -300,7 +281,7 @@ private fun GoalCard(
                     )
                 }
             }
-            
+
             if (!progress.isComplete) {
                 OutlinedButton(
                     onClick = onAddClick,
@@ -310,7 +291,7 @@ private fun GoalCard(
                 }
             } else {
                 Icon(
-                    Icons.Default.Add, // Using Add as a placeholder for a checkmark here if desired
+                    Icons.Default.Add,
                     contentDescription = "Done",
                     tint = OceanTeal,
                     modifier = Modifier.padding(8.dp)
@@ -318,314 +299,4 @@ private fun GoalCard(
             }
         }
     }
-}
-
-@Composable
-private fun GoalAppearancePicker(
-    currentEmoji: String,
-    currentUri: String?,
-    onEmojiSelected: (String) -> Unit,
-    onUriSelected: (String?) -> Unit
-) {
-    val commonEmojis = listOf("🎯", "🏍️", "🏖️", "💻", "🏠", "💍", "✈️", "🎓")
-    
-    // Launch Android's native secure Photo Picker
-    val photoPickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.PickVisualMedia()
-    ) { uri ->
-        if (uri != null) {
-            onUriSelected(uri.toString())
-        }
-    }
-
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Text("Appearance", style = MaterialTheme.typography.labelSmall, color = KapeBrownSoft)
-        Spacer(modifier = Modifier.height(8.dp))
-        
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Goal Preview Ring
-            GoalRingAvatar(
-                imageUri = currentUri,
-                emoji = currentEmoji,
-                progress = 0.3f, // Mock progress for the preview
-                size = 56.dp
-            )
-            
-            // Emoji quick selects
-            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                commonEmojis.take(4).forEach { emoji ->
-                    Box(
-                        modifier = Modifier
-                            .size(36.dp)
-                            .clip(CircleShape)
-                            .background(if (currentEmoji == emoji && currentUri == null) OceanTeal.copy(alpha = 0.1f) else Color.Transparent)
-                            .clickable {
-                                onEmojiSelected(emoji)
-                                onUriSelected(null) // Clear photo if an emoji is picked
-                            },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(emoji, fontSize = 20.sp)
-                    }
-                }
-            }
-
-            // Photo Button
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .background(OceanTeal.copy(alpha = 0.1f))
-                    .clickable { 
-                        photoPickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-                    },
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(Icons.Default.Image, contentDescription = "Pick Photo", tint = OceanTeal, modifier = Modifier.size(20.dp))
-            }
-        }
-    }
-}
-
-@Composable
-fun CreateGoalDialog(
-    onDismiss: () -> Unit,
-    onConfirm: (label: String, target: Money, emoji: String, deadline: String?, imageUri: String?) -> Unit
-) {
-    var label by remember { mutableStateOf("") }
-    var target by remember { mutableStateOf("") }
-    var deadline by remember { mutableStateOf("") }
-    var selectedEmoji by remember { mutableStateOf("🎯") }
-    var selectedImageUri by remember { mutableStateOf<String?>(null) }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        containerColor = RicePaper,
-        shape = IponShapes.SquircleLg,
-        title = { Text("New Goal", color = KapeBrown, fontWeight = FontWeight.Bold) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                GoalAppearancePicker(
-                    currentEmoji = selectedEmoji,
-                    currentUri = selectedImageUri,
-                    onEmojiSelected = { selectedEmoji = it },
-                    onUriSelected = { selectedImageUri = it }
-                )
-                
-                OutlinedTextField(
-                    value = label,
-                    onValueChange = { label = it },
-                    label = { Text("What are you saving for?") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                OutlinedTextField(
-                    value = target,
-                    onValueChange = { target = it },
-                    label = { Text("Target Amount (Php)") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                OutlinedTextField(
-                    value = deadline,
-                    onValueChange = { deadline = it },
-                    label = { Text("Deadline (e.g. Dec 2026) - Optional") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    val amount = target.toLongOrNull() ?: 0L
-                    if (label.isNotBlank() && amount > 0L) {
-                        onConfirm(
-                            label,
-                            Money.ofMinorUnits(amount * 100),
-                            selectedEmoji,
-                            deadline.takeIf { it.isNotBlank() },
-                            selectedImageUri
-                        )
-                    }
-                },
-                colors = ButtonDefaults.buttonColors(containerColor = OceanTeal)
-            ) {
-                Text("Create Goal", color = Color.White)
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel", color = KapeBrownSoft) }
-        }
-    )
-}
-
-@Composable
-fun EditGoalDialog(
-    goal: Goal,
-    onDismiss: () -> Unit,
-    onConfirm: (Goal) -> Unit,
-    onArchive: () -> Unit,
-    onDelete: () -> Unit
-) {
-    var label by remember { mutableStateOf(goal.label) }
-    var target by remember { mutableStateOf((goal.target.minorUnits / 100).toString()) }
-    var deadline by remember { mutableStateOf(goal.deadline ?: "") }
-    var selectedEmoji by remember { mutableStateOf(goal.emoji) }
-    var selectedImageUri by remember { mutableStateOf(goal.imageUri) }
-    var showDeleteConfirm by remember { mutableStateOf(false) }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        containerColor = RicePaper,
-        shape = IponShapes.SquircleLg,
-        title = { Text("Edit Goal", color = KapeBrown, fontWeight = FontWeight.Bold) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                GoalAppearancePicker(
-                    currentEmoji = selectedEmoji,
-                    currentUri = selectedImageUri,
-                    onEmojiSelected = { selectedEmoji = it },
-                    onUriSelected = { selectedImageUri = it }
-                )
-                
-                OutlinedTextField(
-                    value = label,
-                    onValueChange = { label = it },
-                    label = { Text("Label") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                OutlinedTextField(
-                    value = target,
-                    onValueChange = { target = it },
-                    label = { Text("Target Amount (Php)") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                OutlinedTextField(
-                    value = deadline,
-                    onValueChange = { deadline = it },
-                    label = { Text("Deadline") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    TextButton(onClick = onArchive) {
-                        Text("Archive", color = OceanTeal)
-                    }
-                    TextButton(onClick = { showDeleteConfirm = true }) {
-                        Text("Delete", color = JeepneyOrange)
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    val amount = target.toLongOrNull() ?: 0L
-                    if (label.isNotBlank() && amount > 0L) {
-                        onConfirm(
-                            goal.copy(
-                                label = label,
-                                target = Money.ofMinorUnits(amount * 100),
-                                emoji = selectedEmoji,
-                                deadline = deadline.takeIf { it.isNotBlank() },
-                                imageUri = selectedImageUri
-                            )
-                        )
-                    }
-                },
-                colors = ButtonDefaults.buttonColors(containerColor = OceanTeal)
-            ) {
-                Text("Save", color = Color.White)
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel", color = KapeBrownSoft) }
-        }
-    )
-
-    if (showDeleteConfirm) {
-        AlertDialog(
-            onDismissRequest = { showDeleteConfirm = false },
-            title = { Text("Delete this goal?") },
-            text = { Text("This removes \"${goal.label}\" and its saved-contribution history permanently. This cannot be undone. If you just want to stop it showing up, Archive is the reversible option instead.") },
-            confirmButton = {
-                TextButton(onClick = {
-                    showDeleteConfirm = false
-                    onDelete()
-                }) {
-                    Text("Delete", color = JeepneyOrange)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeleteConfirm = false }) {
-                    Text("Cancel", color = KapeBrownSoft)
-                }
-            }
-        )
-    }
-}
-
-@Composable
-fun AddContributionDialog(
-    goal: Goal,
-    onDismiss: () -> Unit,
-    onConfirm: (amount: Money, note: String?) -> Unit
-) {
-    var amount by remember { mutableStateOf("") }
-    var note by remember { mutableStateOf("") }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        containerColor = RicePaper,
-        shape = IponShapes.SquircleLg,
-        title = { Text("Add to ${goal.label}", color = KapeBrown, fontWeight = FontWeight.Bold) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                OutlinedTextField(
-                    value = amount,
-                    onValueChange = { amount = it },
-                    label = { Text("Amount (Php)") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                OutlinedTextField(
-                    value = note,
-                    onValueChange = { note = it },
-                    label = { Text("Note (Optional)") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    val parsed = amount.toLongOrNull() ?: 0L
-                    if (parsed > 0L) {
-                        onConfirm(Money.ofMinorUnits(parsed * 100), note.takeIf { it.isNotBlank() })
-                    }
-                },
-                colors = ButtonDefaults.buttonColors(containerColor = OceanTeal)
-            ) {
-                Text("Add Funds", color = Color.White)
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel", color = KapeBrownSoft) }
-        }
-    )
 }

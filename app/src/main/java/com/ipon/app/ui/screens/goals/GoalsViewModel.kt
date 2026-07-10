@@ -3,9 +3,11 @@ package com.ipon.app.ui.screens.goals
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ipon.app.data.model.Goal
+import com.ipon.app.data.model.GoalContribution
 import com.ipon.app.data.model.GoalProgress
 import com.ipon.app.data.repository.GoalRepository
 import com.ipon.app.util.Money
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
@@ -53,4 +55,8 @@ class GoalsViewModel(private val repository: GoalRepository) : ViewModel() {
             repository.updateGoal(goal)
         }
     }
+
+    /** Newest-first contribution history for one goal, for GoalDetailScreen. */
+    fun contributionsForGoal(goalId: String): Flow<List<GoalContribution>> =
+        repository.observeContributionsForGoal(goalId)
 }

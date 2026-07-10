@@ -15,7 +15,7 @@ android {
   compileSdk = 36
 
   defaultConfig {
-    applicationId = "com.aistudio.ipon.kxmpzq"
+    applicationId = "com.ipon.app"
     minSdk = 26
     targetSdk = 36
     versionCode = 1

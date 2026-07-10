@@ -18,6 +18,7 @@ import com.ipon.app.data.repository.ReportRepository
 import com.ipon.app.data.repository.TransactionRepository
 import com.ipon.app.ui.screens.addtransaction.AddTransactionViewModel
 import com.ipon.app.ui.screens.budgetplan.BudgetPlanViewModel
+import com.ipon.app.ui.screens.calendar.CalendarViewModel
 import com.ipon.app.ui.screens.debts.DebtsViewModel
 import com.ipon.app.ui.screens.envelopes.EnvelopesViewModel
 import com.ipon.app.ui.screens.goals.GoalsViewModel
@@ -65,7 +66,9 @@ class IponViewModelFactory(private val container: IponAppContainer) : ViewModelP
             container.envelopeRepository,
             container.goalRepository,
             container.recurringTemplateRepository,
-            container.onboardingPreferences
+            container.onboardingPreferences,
+            container.merchantClassifier,
+            container.categoryMemoryRepository
         ) as T
         AddTransactionViewModel::class.java -> AddTransactionViewModel(
             container.repository,
@@ -89,6 +92,11 @@ class IponViewModelFactory(private val container: IponAppContainer) : ViewModelP
         RecapViewModel::class.java -> RecapViewModel(container.recapRepository) as T
         BudgetPlanViewModel::class.java -> BudgetPlanViewModel(container.budgetPlanRepository) as T
         DebtsViewModel::class.java -> DebtsViewModel(container.debtRepository) as T
+        CalendarViewModel::class.java -> CalendarViewModel(
+            container.repository,
+            container.recurringTemplateRepository,
+            container.onboardingPreferences
+        ) as T
         else -> throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
     }
 }

@@ -55,6 +55,9 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.ipon.app.di.IponViewModelFactory
 import com.ipon.app.ui.screens.addtransaction.AddTransactionScreen
+import com.ipon.app.ui.screens.goals.CreateGoalScreen
+import com.ipon.app.ui.screens.goals.EditGoalScreen
+import com.ipon.app.ui.screens.goals.GoalDetailScreen
 import com.ipon.app.ui.screens.insights.InsightsScreen
 import com.ipon.app.ui.screens.ledger.LedgerScreen
 import com.ipon.app.ui.screens.plan.PlanScreen
@@ -99,6 +102,24 @@ sealed class IponDestination(val route: String, val label: String) {
     data object AddRecurringTemplate : IponDestination("add_recurring_template", "Add recurring")
     data object LearnedCategories : IponDestination("learned_categories", "Learned categories")
     data object YearRecap : IponDestination("year_recap", "Year in Ipon")
+
+    data object CreateGoal : IponDestination("goal_create", "New Goal")
+
+    /**
+     * Same nullable-arg-via-two-helpers pattern as AddTransaction --
+     * goalId is a real path segment here (not query-string) since it's
+     * always present for both routes; GoalDetail and EditGoal simply
+     * substitute the concrete id in.
+     */
+    data object GoalDetail : IponDestination("goal_detail/{goalId}", "Goal") {
+        const val ARG_GOAL_ID = "goalId"
+        fun createRoute(goalId: String): String = "goal_detail/$goalId"
+    }
+
+    data object EditGoal : IponDestination("goal_edit/{goalId}", "Edit Goal") {
+        const val ARG_GOAL_ID = "goalId"
+        fun createRoute(goalId: String): String = "goal_edit/$goalId"
+    }
 }
 
 @Composable
@@ -134,7 +155,10 @@ fun IponNavHost(viewModelFactory: IponViewModelFactory) {
     val showBottomNav = currentRoute?.startsWith("add_transaction") != true &&
             currentRoute != IponDestination.AddRecurringTemplate.route &&
             currentRoute != IponDestination.LearnedCategories.route &&
-            currentRoute != IponDestination.YearRecap.route
+            currentRoute != IponDestination.YearRecap.route &&
+            currentRoute != IponDestination.CreateGoal.route &&
+            currentRoute?.startsWith("goal_detail") != true &&
+            currentRoute?.startsWith("goal_edit") != true
 
     Column(
         modifier = Modifier.fillMaxSize()
@@ -162,7 +186,40 @@ fun IponNavHost(viewModelFactory: IponViewModelFactory) {
                 composable(IponDestination.Plan.route) {
                     PlanScreen(
                         viewModelFactory = viewModelFactory,
-                        onAddRecurringTemplateClick = { navController.navigate(IponDestination.AddRecurringTemplate.route) }
+                        onAddRecurringTemplateClick = { navController.navigate(IponDestination.AddRecurringTemplate.route) },
+                        onCreateGoalClick = { navController.navigate(IponDestination.CreateGoal.route) },
+                        onGoalClick = { goalId -> navController.navigate(IponDestination.GoalDetail.createRoute(goalId)) }
+                    )
+                }
+                composable(IponDestination.CreateGoal.route) {
+                    CreateGoalScreen(
+                        viewModelFactory = viewModelFactory,
+                        onSaved = { navController.popBackStack() },
+                        onCancel = { navController.popBackStack() }
+                    )
+                }
+                composable(
+                    IponDestination.GoalDetail.route,
+                    arguments = listOf(navArgument(IponDestination.GoalDetail.ARG_GOAL_ID) { type = NavType.StringType })
+                ) { backStackEntry ->
+                    val goalId = backStackEntry.arguments?.getString(IponDestination.GoalDetail.ARG_GOAL_ID) ?: ""
+                    GoalDetailScreen(
+                        viewModelFactory = viewModelFactory,
+                        goalId = goalId,
+                        onBack = { navController.popBackStack() },
+                        onEditClick = { navController.navigate(IponDestination.EditGoal.createRoute(goalId)) }
+                    )
+                }
+                composable(
+                    IponDestination.EditGoal.route,
+                    arguments = listOf(navArgument(IponDestination.EditGoal.ARG_GOAL_ID) { type = NavType.StringType })
+                ) { backStackEntry ->
+                    val goalId = backStackEntry.arguments?.getString(IponDestination.EditGoal.ARG_GOAL_ID) ?: ""
+                    EditGoalScreen(
+                        viewModelFactory = viewModelFactory,
+                        goalId = goalId,
+                        onDone = { navController.popBackStack() },
+                        onCancel = { navController.popBackStack() }
                     )
                 }
                 composable(IponDestination.AddRecurringTemplate.route) {

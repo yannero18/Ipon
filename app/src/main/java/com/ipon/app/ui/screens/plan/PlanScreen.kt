@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ipon.app.di.IponViewModelFactory
 import com.ipon.app.ui.screens.budgetplan.BudgetPlanScreen
+import com.ipon.app.ui.screens.calendar.CalendarScreen
 import com.ipon.app.ui.screens.debts.DebtsScreen
 import com.ipon.app.ui.screens.envelopes.EnvelopesScreen
 import com.ipon.app.ui.screens.goals.GoalsScreen
@@ -41,7 +42,8 @@ private enum class PlanTab(val label: String) {
     RECURRING("Recurring"),
     GOALS("Goals"),
     DEBTS("Debts"),
-    BUDGET("Budget")
+    BUDGET("Budget"),
+    CALENDAR("Calendar")
 }
 
 val OrganicUnderlineShape = RoundedCornerShape(
@@ -110,7 +112,9 @@ fun LookbookTabRow(
 @Composable
 fun PlanScreen(
     viewModelFactory: IponViewModelFactory,
-    onAddRecurringTemplateClick: () -> Unit
+    onAddRecurringTemplateClick: () -> Unit,
+    onCreateGoalClick: () -> Unit,
+    onGoalClick: (String) -> Unit
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
 
@@ -174,9 +178,14 @@ fun PlanScreen(
                         viewModelFactory = viewModelFactory,
                         onAddTemplateClick = onAddRecurringTemplateClick
                     )
-                    PlanTab.GOALS -> GoalsScreen(viewModelFactory = viewModelFactory)
+                    PlanTab.GOALS -> GoalsScreen(
+                        viewModelFactory = viewModelFactory,
+                        onCreateGoalClick = onCreateGoalClick,
+                        onGoalClick = onGoalClick
+                    )
                     PlanTab.DEBTS -> DebtsScreen(viewModelFactory = viewModelFactory)
                     PlanTab.BUDGET -> BudgetPlanScreen(viewModelFactory = viewModelFactory)
+                    PlanTab.CALENDAR -> CalendarScreen(viewModelFactory = viewModelFactory)
                 }
             }
         }
