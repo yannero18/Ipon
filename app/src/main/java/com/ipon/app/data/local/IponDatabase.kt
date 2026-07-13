@@ -21,7 +21,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         DebtPaymentEntity::class,
         ReportEntity::class
     ],
-    version = 12, // Bumping version for the new imageUri column
+    version = 14, // Bumping version to clean up orphaned goal/debt child rows
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -123,6 +123,32 @@ abstract class IponDatabase : RoomDatabase() {
             }
         }
 
+        // Version 12 to 13 lets a Debt carry an upfront fee (the
+        // "loan for 1600, receive 1540" discount-loan structure) and an
+        // optional single due date.
+        private val MIGRATION_12_13 = object : Migration(12, 13) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE debts ADD COLUMN feeMinorUnits INTEGER NOT NULL DEFAULT 0;")
+                db.execSQL("ALTER TABLE debts ADD COLUMN dueDate TEXT;")
+            }
+        }
+
+        /**
+         * Version 13 to 14 is a one-time cleanup, not a schema change: deleting
+         * a Goal or Debt never cleaned up its contributions/payments (no
+         * foreign key was ever declared, so SQLite had no way to know), which
+         * silently left orphaned rows behind -- see GoalDao.deleteGoalAndContributions
+         * and DebtDao.deleteDebtAndPayments for the actual fix going forward.
+         * This migration just clears out orphans that fix already can't reach,
+         * since they were created before it existed.
+         */
+        private val MIGRATION_13_14 = object : Migration(13, 14) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("DELETE FROM goal_contributions WHERE goalId NOT IN (SELECT id FROM goals);")
+                db.execSQL("DELETE FROM debt_payments WHERE debtId NOT IN (SELECT id FROM debts);")
+            }
+        }
+
         private fun executeSchema(db: SupportSQLiteDatabase) {
             // Deprecated helper to initialize full schema, now handled incrementally or via createFromAsset
             db.execSQL("CREATE TABLE IF NOT EXISTS transactions (id TEXT NOT NULL PRIMARY KEY, amountMinorUnits INTEGER NOT NULL, type TEXT NOT NULL, category TEXT NOT NULL, merchantRaw TEXT, note TEXT, occurredAtEpochMillis INTEGER NOT NULL, createdAtEpochMillis INTEGER NOT NULL, isAutoCategorized INTEGER NOT NULL DEFAULT 0) WITHOUT ROWID;")
@@ -165,7 +191,9 @@ abstract class IponDatabase : RoomDatabase() {
                     MIGRATION_8_9,
                     MIGRATION_9_10,
                     MIGRATION_10_11,
-                    MIGRATION_11_12
+                    MIGRATION_11_12,
+                    MIGRATION_12_13,
+                    MIGRATION_13_14
                 )
                 .build()
     }

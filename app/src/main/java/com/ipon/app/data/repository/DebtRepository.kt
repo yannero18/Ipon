@@ -25,15 +25,28 @@ class DebtRepository(private val dao: DebtDao) {
             }
         }
 
-    suspend fun createDebt(label: String, originalBalance: Money, interestRatePercent: Double?) {
+    suspend fun createDebt(
+        label: String,
+        originalBalance: Money,
+        interestRatePercent: Double?,
+        fee: Money = Money.ZERO,
+        dueDate: String? = null
+    ) {
         dao.insert(
             DebtEntity(
                 id = UUID.randomUUID().toString(),
                 label = label,
                 originalBalanceMinorUnits = originalBalance.minorUnits,
-                interestRatePercent = interestRatePercent
+                interestRatePercent = interestRatePercent,
+                feeMinorUnits = fee.minorUnits,
+                dueDate = dueDate
             )
         )
+    }
+
+    /** General-purpose edit -- label, balance, rate, fee, due date. Archive/delete stay their own dedicated calls below since they're distinct, less-reversible actions. */
+    suspend fun updateDebt(debt: Debt) {
+        dao.update(debt.toEntity())
     }
 
     suspend fun archiveDebt(debt: Debt) {
@@ -41,7 +54,7 @@ class DebtRepository(private val dao: DebtDao) {
     }
 
     suspend fun deleteDebt(debt: Debt) {
-        dao.delete(debt.toEntity())
+        dao.deleteDebtAndPayments(debt.toEntity())
     }
 
     suspend fun recordPayment(debtId: String, amount: Money) {

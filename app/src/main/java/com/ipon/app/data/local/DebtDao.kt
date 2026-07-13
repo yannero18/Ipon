@@ -5,6 +5,7 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 
@@ -24,6 +25,16 @@ interface DebtDao {
 
     @Delete
     suspend fun delete(debt: DebtEntity)
+
+    @Query("DELETE FROM debt_payments WHERE debtId = :debtId")
+    suspend fun deletePaymentsForDebt(debtId: String)
+
+    /** Deletes a debt AND its payment history together, atomically -- same reasoning as GoalDao.deleteGoalAndContributions. */
+    @Transaction
+    suspend fun deleteDebtAndPayments(debt: DebtEntity) {
+        deletePaymentsForDebt(debt.id)
+        delete(debt)
+    }
 
     @Query("SELECT * FROM debts WHERE isArchived = 0 ORDER BY createdAtEpochMillis ASC")
     fun observeActive(): Flow<List<DebtEntity>>

@@ -38,6 +38,26 @@ data class DebtEntity(
     @ColumnInfo(name = "interestRatePercent")
     val interestRatePercent: Double?,
 
+    /**
+     * A one-time fee deducted before the money reaches your hand -- common
+     * with 5-6 lending, pawnshops, and lending apps: you're on the hook for
+     * the full [originalBalanceMinorUnits], but what actually lands in your
+     * pocket is that minus this fee. Kept as its own field rather than
+     * baked into the balance so both numbers stay visible and honest;
+     * see [com.ipon.app.data.model.Debt.netProceedsReceived].
+     */
+    @ColumnInfo(name = "feeMinorUnits")
+    val feeMinorUnits: Long = 0L,
+
+    /**
+     * Free-text due date, same convention as Goal.deadline -- e.g.
+     * "Jul 25, 2026" or "2026-07-25". A single lump-sum deadline, not a
+     * recurring monthly date; genuinely recurring obligations (rent,
+     * subscriptions) belong in Recurring templates instead.
+     */
+    @ColumnInfo(name = "dueDate")
+    val dueDate: String? = null,
+
     @ColumnInfo(name = "isArchived")
     val isArchived: Boolean = false,
 

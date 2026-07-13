@@ -1,9 +1,15 @@
 package com.ipon.app.ui.screens.settings
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ipon.app.data.backup.IponBackup
 import com.ipon.app.data.repository.AppDataRepository
+import com.ipon.app.data.repository.BackupRepository
+import com.ipon.app.data.repository.BackupSummary
+import com.ipon.app.data.repository.BackupTooNewException
 import com.ipon.app.data.repository.ExportRepository
+import com.ipon.app.data.repository.InvalidBackupFileException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -17,9 +23,29 @@ sealed interface ExportResult {
     data object Failed : ExportResult
 }
 
+sealed interface BackupExportResult {
+    data class Success(val filename: String) : BackupExportResult
+    data object Unsupported : BackupExportResult
+    data object Failed : BackupExportResult
+}
+
+/** A backup file the person picked, read and validated, waiting on their explicit "yes, replace everything" confirmation. */
+sealed interface PendingRestore {
+    data class ReadyToConfirm(val uri: Uri, val backup: IponBackup) : PendingRestore
+    data class TooNew(val fileSchemaVersion: Int) : PendingRestore
+    data object InvalidFile : PendingRestore
+    data object UnreadableFile : PendingRestore
+}
+
+sealed interface RestoreResult {
+    data class Success(val summary: BackupSummary) : RestoreResult
+    data object Failed : RestoreResult
+}
+
 class SettingsViewModel(
     private val appDataRepository: AppDataRepository,
-    private val exportRepository: ExportRepository
+    private val exportRepository: ExportRepository,
+    private val backupRepository: BackupRepository
 ) : ViewModel() {
 
     private val _dataCleared = MutableStateFlow(false)
@@ -37,6 +63,24 @@ class SettingsViewModel(
     // NEW STATE: To show a loading indicator during the auto-export before wipe
     private val _isClearing = MutableStateFlow(false)
     val isClearing: StateFlow<Boolean> = _isClearing.asStateFlow()
+
+    private val _isBackingUp = MutableStateFlow(false)
+    val isBackingUp: StateFlow<Boolean> = _isBackingUp.asStateFlow()
+
+    private val _backupExportResult = MutableStateFlow<BackupExportResult?>(null)
+    val backupExportResult: StateFlow<BackupExportResult?> = _backupExportResult.asStateFlow()
+
+    private val _isReadingBackupFile = MutableStateFlow(false)
+    val isReadingBackupFile: StateFlow<Boolean> = _isReadingBackupFile.asStateFlow()
+
+    private val _pendingRestore = MutableStateFlow<PendingRestore?>(null)
+    val pendingRestore: StateFlow<PendingRestore?> = _pendingRestore.asStateFlow()
+
+    private val _isRestoring = MutableStateFlow(false)
+    val isRestoring: StateFlow<Boolean> = _isRestoring.asStateFlow()
+
+    private val _restoreResult = MutableStateFlow<RestoreResult?>(null)
+    val restoreResult: StateFlow<RestoreResult?> = _restoreResult.asStateFlow()
 
     fun exportData() {
         viewModelScope.launch {
@@ -101,5 +145,71 @@ class SettingsViewModel(
 
     fun resetClearDataMessage() {
         _clearDataMessage.value = null
+    }
+
+    fun backupData() {
+        viewModelScope.launch {
+            _isBackingUp.value = true
+            _backupExportResult.value = try {
+                val filename = withContext(Dispatchers.IO) { backupRepository.exportBackup() }
+                BackupExportResult.Success(filename)
+            } catch (e: UnsupportedOperationException) {
+                BackupExportResult.Unsupported
+            } catch (e: Exception) {
+                BackupExportResult.Failed
+            }
+            _isBackingUp.value = false
+        }
+    }
+
+    fun clearBackupExportResult() {
+        _backupExportResult.value = null
+    }
+
+    /**
+     * Step 1 of restore: read and validate the picked file, but don't touch
+     * the database yet. The UI shows [PendingRestore.ReadyToConfirm]'s row
+     * counts as a real "this replaces your current data with this" warning
+     * before [confirmRestore] is ever called.
+     */
+    fun onRestoreFileSelected(uri: Uri) {
+        viewModelScope.launch {
+            _isReadingBackupFile.value = true
+            _pendingRestore.value = try {
+                val backup = withContext(Dispatchers.IO) { backupRepository.peekBackup(uri) }
+                PendingRestore.ReadyToConfirm(uri, backup)
+            } catch (e: BackupTooNewException) {
+                PendingRestore.TooNew(e.fileSchemaVersion)
+            } catch (e: InvalidBackupFileException) {
+                PendingRestore.InvalidFile
+            } catch (e: Exception) {
+                PendingRestore.UnreadableFile
+            }
+            _isReadingBackupFile.value = false
+        }
+    }
+
+    fun cancelPendingRestore() {
+        _pendingRestore.value = null
+    }
+
+    /** Step 2: the person has seen the row counts and explicitly confirmed. This is the destructive part. */
+    fun confirmRestore() {
+        val pending = _pendingRestore.value as? PendingRestore.ReadyToConfirm ?: return
+        viewModelScope.launch {
+            _isRestoring.value = true
+            _restoreResult.value = try {
+                val summary = withContext(Dispatchers.IO) { backupRepository.importBackup(pending.backup) }
+                RestoreResult.Success(summary)
+            } catch (e: Exception) {
+                RestoreResult.Failed
+            }
+            _isRestoring.value = false
+            _pendingRestore.value = null
+        }
+    }
+
+    fun clearRestoreResult() {
+        _restoreResult.value = null
     }
 }

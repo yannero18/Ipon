@@ -8,8 +8,15 @@ data class Debt(
     val label: String,
     val originalBalance: Money,
     val interestRatePercent: Double?,
+    /** Upfront fee deducted before the cash reaches you -- 0 if this loan had no such fee. */
+    val fee: Money = Money.ZERO,
+    /** Free-text single deadline, e.g. "Jul 25, 2026" -- null if this debt has no fixed due date. */
+    val dueDate: String? = null,
     val isArchived: Boolean
-)
+) {
+    /** What you actually received in hand -- originalBalance minus the upfront fee. Equal to originalBalance when fee is zero. */
+    val netProceedsReceived: Money get() = originalBalance - fee
+}
 
 data class DebtProgress(
     val debt: Debt,
@@ -52,6 +59,8 @@ fun DebtEntity.toDomain(): Debt = Debt(
     label = label,
     originalBalance = Money.ofMinorUnits(originalBalanceMinorUnits),
     interestRatePercent = interestRatePercent,
+    fee = Money.ofMinorUnits(feeMinorUnits),
+    dueDate = dueDate,
     isArchived = isArchived
 )
 
@@ -60,5 +69,7 @@ fun Debt.toEntity(): DebtEntity = DebtEntity(
     label = label,
     originalBalanceMinorUnits = originalBalance.minorUnits,
     interestRatePercent = interestRatePercent,
+    feeMinorUnits = fee.minorUnits,
+    dueDate = dueDate,
     isArchived = isArchived
 )

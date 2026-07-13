@@ -19,12 +19,16 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -61,7 +65,57 @@ import com.ipon.app.ui.theme.Terracotta
 import com.ipon.app.ui.theme.WarmCream
 import com.ipon.app.util.HapticFeedbackManager
 import com.ipon.app.util.Money
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
+import java.util.TimeZone
 
+/**
+ * Debt due dates are stored as plain ISO "yyyy-MM-dd" strings -- unlike
+ * Goal.deadline, which is decorative free text, a Debt's due date needs to
+ * be genuinely comparable (for the overdue highlight below and for showing
+ * up on the Calendar tab), so it's picked from a real date picker rather
+ * than typed.
+ */
+private fun parseIsoDateOrNull(iso: String?): Calendar? {
+    if (iso.isNullOrBlank()) return null
+    val parts = iso.split("-")
+    if (parts.size != 3) return null
+    return try {
+        val year = parts[0].toInt()
+        val month = parts[1].toInt()
+        val day = parts[2].toInt()
+        Calendar.getInstance().apply {
+            set(year, month - 1, day, 0, 0, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+    } catch (e: NumberFormatException) {
+        null
+    }
+}
+
+private fun formatIsoDateForDisplay(iso: String): String {
+    val cal = parseIsoDateOrNull(iso) ?: return iso
+    return SimpleDateFormat("MMM d, yyyy", Locale.US).format(cal.time)
+}
+
+private fun isDebtOverdue(debt: Debt, isPaidOff: Boolean): Boolean {
+    if (isPaidOff) return false
+    val due = parseIsoDateOrNull(debt.dueDate) ?: return false
+    val today = Calendar.getInstance().apply {
+        set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
+    }
+    return due.before(today)
+}
+
+/** DatePicker gives UTC-midnight millis for the picked day; converting via a UTC calendar avoids an off-by-one-day shift from local timezone reinterpretation. */
+private fun utcMillisToIsoDate(utcMillis: Long): String {
+    val cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"))
+    cal.timeInMillis = utcMillis
+    return String.format(Locale.US, "%04d-%02d-%02d", cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DAY_OF_MONTH))
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DebtsScreen(viewModelFactory: IponViewModelFactory) {
     val viewModel: DebtsViewModel = viewModel(factory = viewModelFactory)
@@ -73,6 +127,7 @@ fun DebtsScreen(viewModelFactory: IponViewModelFactory) {
     var payingDebt by remember { mutableStateOf<Debt?>(null) }
     var showCreateDialog by remember { mutableStateOf(false) }
     var managingDebt by remember { mutableStateOf<Debt?>(null) }
+    var editingDebt by remember { mutableStateOf<Debt?>(null) }
 
     Scaffold(containerColor = Color.Transparent) { padding ->
         LazyColumn(
@@ -217,9 +272,9 @@ fun DebtsScreen(viewModelFactory: IponViewModelFactory) {
     if (showCreateDialog) {
         CreateDebtDialog(
             haptics = haptics,
-            onConfirm = { label, balance, rate ->
+            onConfirm = { label, balance, rate, fee, dueDate ->
                 haptics.onTransactionSaved(balance, Money.ZERO)
-                viewModel.createDebt(label, balance, rate)
+                viewModel.createDebt(label, balance, rate, fee, dueDate)
                 showCreateDialog = false
             },
             onDismiss = { showCreateDialog = false }
@@ -239,8 +294,13 @@ fun DebtsScreen(viewModelFactory: IponViewModelFactory) {
                 )
             },
             confirmButton = {
-                TextButton(onClick = { viewModel.archiveDebt(debt); managingDebt = null }) {
-                    Text("Archive", color = OceanTeal)
+                Row {
+                    TextButton(onClick = { editingDebt = debt; managingDebt = null }) {
+                        Text("Edit", color = OceanTeal)
+                    }
+                    TextButton(onClick = { viewModel.archiveDebt(debt); managingDebt = null }) {
+                        Text("Archive", color = OceanTeal)
+                    }
                 }
             },
             dismissButton = {
@@ -257,6 +317,18 @@ fun DebtsScreen(viewModelFactory: IponViewModelFactory) {
                     }
                 }
             }
+        )
+    }
+
+    editingDebt?.let { debt ->
+        EditDebtDialog(
+            debt = debt,
+            haptics = haptics,
+            onConfirm = { updated ->
+                viewModel.updateDebt(updated)
+                editingDebt = null
+            },
+            onDismiss = { editingDebt = null }
         )
     }
 }
@@ -335,6 +407,23 @@ private fun DebtCard(
                             color = KapeBrownSoft,
                             modifier = Modifier.padding(top = 2.dp)
                         )
+                        if (!progress.debt.fee.isZero) {
+                            Text(
+                                text = "${progress.debt.fee.formatPhp()} fee · received ${progress.debt.netProceedsReceived.formatPhp()}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = KapeBrownSoft,
+                                modifier = Modifier.padding(top = 2.dp)
+                            )
+                        }
+                        progress.debt.dueDate?.let { iso ->
+                            val overdue = isDebtOverdue(progress.debt, isPaid)
+                            Text(
+                                text = if (overdue) "Overdue since ${formatIsoDateForDisplay(iso)}" else "Due ${formatIsoDateForDisplay(iso)}",
+                                style = MaterialTheme.typography.bodySmall.copy(fontWeight = if (overdue) FontWeight.Bold else FontWeight.Normal),
+                                color = if (overdue) Terracotta else KapeBrownSoft,
+                                modifier = Modifier.padding(top = 2.dp)
+                            )
+                        }
                     }
                 }
                 
@@ -471,16 +560,183 @@ private fun AddPaymentDialog(debt: Debt, haptics: HapticFeedbackManager, onConfi
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun DueDateField(
+    isoDate: String,
+    onDateSelected: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var showPicker by remember { mutableStateOf(false) }
+
+    Column(modifier = modifier) {
+        Text(
+            text = "Due date, optional",
+            style = MaterialTheme.typography.labelSmall,
+            color = KapeBrownSoft
+        )
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 4.dp)
+                .clip(RoundedCornerShape(4.dp))
+                .border(1.dp, HairlineBorder, RoundedCornerShape(4.dp))
+                .clickable { showPicker = true }
+                .padding(horizontal = 12.dp, vertical = 14.dp)
+        ) {
+            Text(
+                text = if (isoDate.isBlank()) "Tap to set a date" else formatIsoDateForDisplay(isoDate),
+                color = if (isoDate.isBlank()) KapeBrownSoft.copy(alpha = 0.7f) else KapeBrown
+            )
+        }
+    }
+
+    if (showPicker) {
+        val initialMillis = parseIsoDateOrNull(isoDate)?.timeInMillis
+        val pickerState = rememberDatePickerState(initialSelectedDateMillis = initialMillis)
+        DatePickerDialog(
+            onDismissRequest = { showPicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    pickerState.selectedDateMillis?.let { onDateSelected(utcMillisToIsoDate(it)) }
+                    showPicker = false
+                }) {
+                    Text("OK", color = OceanTeal)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showPicker = false }) {
+                    Text("Cancel", color = KapeBrownSoft)
+                }
+            }
+        ) {
+            DatePicker(state = pickerState)
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun EditDebtDialog(
+    debt: Debt,
+    haptics: HapticFeedbackManager,
+    onConfirm: (Debt) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var label by remember { mutableStateOf(debt.label) }
+    var balanceInput by remember { mutableStateOf((debt.originalBalance.minorUnits / 100).toString()) }
+    var rateInput by remember { mutableStateOf(debt.interestRatePercent?.toString() ?: "") }
+    var feeInput by remember { mutableStateOf(if (debt.fee.isZero) "" else (debt.fee.minorUnits / 100).toString()) }
+    var dueDateIso by remember { mutableStateOf(debt.dueDate ?: "") }
+    var error by remember { mutableStateOf<String?>(null) }
+
+    val balance = Money.parse(balanceInput)
+    val fee = Money.parse(feeInput)
+    val netReceived = if (balance != null && fee != null) balance - fee else null
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Edit debt") },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = label,
+                    onValueChange = { label = it },
+                    label = { Text("What is it?") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = balanceInput,
+                    onValueChange = { balanceInput = it; error = null },
+                    label = { Text("Amount you owe (₱)") },
+                    isError = error != null,
+                    supportingText = error?.let { errorText -> { Text(errorText) } },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 10.dp)
+                )
+                OutlinedTextField(
+                    value = feeInput,
+                    onValueChange = { feeInput = it },
+                    label = { Text("Fee deducted upfront, optional") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 10.dp)
+                )
+                if (netReceived != null && fee != null && !fee.isZero) {
+                    Text(
+                        text = "You actually received: ${netReceived.formatPhp()}",
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                        color = OceanTeal,
+                        modifier = Modifier.padding(top = 6.dp)
+                    )
+                }
+                OutlinedTextField(
+                    value = rateInput,
+                    onValueChange = { rateInput = it },
+                    label = { Text("Interest rate %, optional") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 10.dp)
+                )
+                DueDateField(
+                    isoDate = dueDateIso,
+                    onDateSelected = { dueDateIso = it },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 10.dp)
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                if (balance == null || balance.isZero || balance.isNegative) {
+                    error = "Enter a valid balance"
+                    haptics.onValidationError()
+                } else if (label.isBlank()) {
+                    error = "Give it a name"
+                    haptics.onValidationError()
+                } else if (fee != null && (fee.isNegative || fee.minorUnits > balance.minorUnits)) {
+                    error = "Fee can't be more than the amount you owe"
+                    haptics.onValidationError()
+                } else {
+                    onConfirm(
+                        debt.copy(
+                            label = label,
+                            originalBalance = balance,
+                            interestRatePercent = rateInput.toDoubleOrNull(),
+                            fee = fee ?: Money.ZERO,
+                            dueDate = dueDateIso.takeIf { it.isNotBlank() }
+                        )
+                    )
+                }
+            }) {
+                Text("Save", color = JeepneyOrange)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel", color = KapeBrownSoft) }
+        }
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun CreateDebtDialog(
     haptics: HapticFeedbackManager,
-    onConfirm: (label: String, balance: Money, ratePercent: Double?) -> Unit,
+    onConfirm: (label: String, balance: Money, ratePercent: Double?, fee: Money, dueDate: String?) -> Unit,
     onDismiss: () -> Unit
 ) {
     var label by remember { mutableStateOf("") }
     var balanceInput by remember { mutableStateOf("") }
     var rateInput by remember { mutableStateOf("") }
+    var feeInput by remember { mutableStateOf("") }
+    var dueDateIso by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
+
+    val balance = Money.parse(balanceInput)
+    val fee = Money.parse(feeInput)
+    val netReceived = if (balance != null && fee != null) balance - fee else null
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -496,13 +752,30 @@ private fun CreateDebtDialog(
                 OutlinedTextField(
                     value = balanceInput,
                     onValueChange = { balanceInput = it; error = null },
-                    label = { Text("Current balance (₱)") },
+                    label = { Text("Amount you owe (₱)") },
                     isError = error != null,
                     supportingText = error?.let { errorText -> { Text(errorText) } },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = 10.dp)
                 )
+                OutlinedTextField(
+                    value = feeInput,
+                    onValueChange = { feeInput = it },
+                    label = { Text("Fee deducted upfront, optional") },
+                    placeholder = { Text("e.g. 60 if they gave you less than you owe") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 10.dp)
+                )
+                if (netReceived != null && fee != null && !fee.isZero) {
+                    Text(
+                        text = "You'll actually receive: ${netReceived.formatPhp()}",
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                        color = OceanTeal,
+                        modifier = Modifier.padding(top = 6.dp)
+                    )
+                }
                 OutlinedTextField(
                     value = rateInput,
                     onValueChange = { rateInput = it },
@@ -511,20 +784,29 @@ private fun CreateDebtDialog(
                         .fillMaxWidth()
                         .padding(top = 10.dp)
                 )
+                DueDateField(
+                    isoDate = dueDateIso,
+                    onDateSelected = { dueDateIso = it },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 10.dp)
+                )
             }
         },
         confirmButton = {
             TextButton(onClick = {
-                val balance = Money.parse(balanceInput)
                 if (balance == null || balance.isZero || balance.isNegative) {
                     error = "Enter a valid balance"
                     haptics.onValidationError()
                 } else if (label.isBlank()) {
                     error = "Give it a name"
                     haptics.onValidationError()
+                } else if (fee != null && (fee.isNegative || fee.minorUnits > balance.minorUnits)) {
+                    error = "Fee can't be more than the amount you owe"
+                    haptics.onValidationError()
                 } else {
                     val rate = rateInput.toDoubleOrNull()
-                    onConfirm(label, balance, rate)
+                    onConfirm(label, balance, rate, fee ?: Money.ZERO, dueDateIso.takeIf { it.isNotBlank() })
                 }
             }) {
                 Text("Add", color = JeepneyOrange)

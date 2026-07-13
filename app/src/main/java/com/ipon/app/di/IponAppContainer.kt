@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.ipon.app.data.local.IponDatabase
 import com.ipon.app.data.repository.AppDataRepository
+import com.ipon.app.data.repository.BackupRepository
 import com.ipon.app.data.repository.BudgetPlanRepository
 import com.ipon.app.data.repository.CategoryMemoryRepository
 import com.ipon.app.data.repository.DailyReflectionRepository
@@ -47,6 +48,7 @@ class IponAppContainer(context: Context) {
     val goalRepository = GoalRepository(database.goalDao())
     val dailyReflectionRepository = DailyReflectionRepository(database.dailyReflectionDao(), database.transactionDao())
     val appDataRepository = AppDataRepository(database)
+    val backupRepository = BackupRepository(context, database)
     val categoryMemoryRepository = CategoryMemoryRepository(database.merchantCategoryMemoryDao())
     val exportRepository = ExportRepository(context, database)
     val recapRepository = RecapRepository(repository, goalRepository, dailyReflectionRepository)
@@ -87,7 +89,11 @@ class IponViewModelFactory(private val container: IponAppContainer) : ViewModelP
         RecurringViewModel::class.java -> RecurringViewModel(container.recurringTemplateRepository, container.repository) as T
         GoalsViewModel::class.java -> GoalsViewModel(container.goalRepository) as T
         ReflectionViewModel::class.java -> ReflectionViewModel(container.dailyReflectionRepository) as T
-        SettingsViewModel::class.java -> SettingsViewModel(container.appDataRepository, container.exportRepository) as T
+        SettingsViewModel::class.java -> SettingsViewModel(
+            container.appDataRepository,
+            container.exportRepository,
+            container.backupRepository
+        ) as T
         LearnedCategoriesViewModel::class.java -> LearnedCategoriesViewModel(container.categoryMemoryRepository) as T
         RecapViewModel::class.java -> RecapViewModel(container.recapRepository) as T
         BudgetPlanViewModel::class.java -> BudgetPlanViewModel(container.budgetPlanRepository) as T
@@ -95,6 +101,7 @@ class IponViewModelFactory(private val container: IponAppContainer) : ViewModelP
         CalendarViewModel::class.java -> CalendarViewModel(
             container.repository,
             container.recurringTemplateRepository,
+            container.debtRepository,
             container.onboardingPreferences
         ) as T
         else -> throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")

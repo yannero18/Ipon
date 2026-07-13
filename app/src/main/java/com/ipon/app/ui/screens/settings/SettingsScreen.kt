@@ -1,5 +1,7 @@
 package com.ipon.app.ui.screens.settings
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -36,6 +38,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ipon.app.BuildConfig
 import com.ipon.app.di.IponViewModelFactory
 import com.ipon.app.ui.theme.IponShapes
+import com.ipon.app.ui.theme.JeepneyOrange
 import com.ipon.app.ui.theme.KapeBrown
 import com.ipon.app.ui.theme.KapeBrownSoft
 import com.ipon.app.ui.theme.OceanTeal
@@ -53,6 +56,16 @@ fun SettingsScreen(
     val exportResult by viewModel.exportResult.collectAsState()
     val isExporting by viewModel.isExporting.collectAsState()
     val isClearing by viewModel.isClearing.collectAsState()
+    val isBackingUp by viewModel.isBackingUp.collectAsState()
+    val backupExportResult by viewModel.backupExportResult.collectAsState()
+    val isReadingBackupFile by viewModel.isReadingBackupFile.collectAsState()
+    val pendingRestore by viewModel.pendingRestore.collectAsState()
+    val isRestoring by viewModel.isRestoring.collectAsState()
+    val restoreResult by viewModel.restoreResult.collectAsState()
+
+    val restoreFileLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri -> if (uri != null) viewModel.onRestoreFileSelected(uri) }
 
     var showConfirmDialog by remember { mutableStateOf(false) }
     var showFinalConfirmDialog by remember { mutableStateOf(false) }
@@ -120,6 +133,44 @@ fun SettingsScreen(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text("Your learned categories", color = OceanTeal, fontWeight = FontWeight.Bold)
+                    }
+                }
+
+                SettingsSection(title = "Backup & Restore") {
+                    Text(
+                        text = "A real, restorable backup of everything on this device -- " +
+                            "unlike the CSV export below, this can bring your data back on " +
+                            "this phone or a new one. Saved as a .json file in your " +
+                            "Downloads folder.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = KapeBrownSoft,
+                        modifier = Modifier.padding(bottom = 12.dp)
+                    )
+                    Button(
+                        onClick = { viewModel.backupData() },
+                        enabled = !isBackingUp,
+                        colors = ButtonDefaults.buttonColors(containerColor = OceanTeal),
+                        shape = IponShapes.SquircleSm,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        if (isBackingUp) {
+                            CircularProgressIndicator(modifier = Modifier.size(18.dp), color = RicePaper, strokeWidth = 2.dp)
+                        } else {
+                            Text("Back up my data", color = RicePaper, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(10.dp))
+                    OutlinedButton(
+                        onClick = { restoreFileLauncher.launch(arrayOf("application/json")) },
+                        enabled = !isReadingBackupFile,
+                        shape = IponShapes.SquircleSm,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        if (isReadingBackupFile) {
+                            CircularProgressIndicator(modifier = Modifier.size(18.dp), color = OceanTeal, strokeWidth = 2.dp)
+                        } else {
+                            Text("Restore from backup", color = OceanTeal, fontWeight = FontWeight.Bold)
+                        }
                     }
                 }
 
@@ -198,6 +249,175 @@ fun SettingsScreen(
             confirmButton = {
                 Button(
                     onClick = { viewModel.clearExportResult() },
+                    colors = ButtonDefaults.buttonColors(containerColor = OceanTeal),
+                    shape = IponShapes.SquircleSm
+                ) {
+                    Text("OK", color = Color.White)
+                }
+            },
+            containerColor = RicePaper,
+            shape = IponShapes.SquircleLg
+        )
+    }
+
+    backupExportResult?.let { result ->
+        AlertDialog(
+            onDismissRequest = { viewModel.clearBackupExportResult() },
+            title = {
+                Text(
+                    text = when (result) {
+                        is BackupExportResult.Success -> "Backed up"
+                        BackupExportResult.Unsupported -> "Not available"
+                        BackupExportResult.Failed -> "Backup failed"
+                    },
+                    color = KapeBrown,
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Text(
+                    text = when (result) {
+                        is BackupExportResult.Success -> "Saved as \"${result.filename}\" in your Downloads folder. Keep this file somewhere safe -- it's the only way back if this device is lost or reset."
+                        BackupExportResult.Unsupported -> "Backup needs Android 10 or newer. This device's Android version doesn't support it."
+                        BackupExportResult.Failed -> "Something went wrong while writing the backup file."
+                    },
+                    color = KapeBrownSoft
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = { viewModel.clearBackupExportResult() },
+                    colors = ButtonDefaults.buttonColors(containerColor = OceanTeal),
+                    shape = IponShapes.SquircleSm
+                ) {
+                    Text("OK", color = Color.White)
+                }
+            },
+            containerColor = RicePaper,
+            shape = IponShapes.SquircleLg
+        )
+    }
+
+    pendingRestore?.let { pending ->
+        when (pending) {
+            is PendingRestore.ReadyToConfirm -> {
+                val summary = pending.backup
+                AlertDialog(
+                    onDismissRequest = { viewModel.cancelPendingRestore() },
+                    title = { Text("Replace everything on this device?", color = KapeBrown, fontWeight = FontWeight.Bold) },
+                    text = {
+                        Text(
+                            text = "This backup has ${summary.transactions.size} transactions, " +
+                                "${summary.goals.size} goals, ${summary.envelopes.size} envelopes, and " +
+                                "${summary.debts.size} debts. Restoring it PERMANENTLY REPLACES everything " +
+                                "currently on this device with what's in this file. This cannot be undone.",
+                            color = KapeBrownSoft
+                        )
+                    },
+                    confirmButton = {
+                        Button(
+                            onClick = { viewModel.confirmRestore() },
+                            enabled = !isRestoring,
+                            colors = ButtonDefaults.buttonColors(containerColor = Terracotta),
+                            shape = IponShapes.SquircleSm
+                        ) {
+                            if (isRestoring) {
+                                CircularProgressIndicator(modifier = Modifier.size(18.dp), color = Color.White, strokeWidth = 2.dp)
+                            } else {
+                                Text("Replace my data", color = Color.White, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { viewModel.cancelPendingRestore() }, enabled = !isRestoring) {
+                            Text("Cancel", color = KapeBrownSoft)
+                        }
+                    },
+                    containerColor = RicePaper,
+                    shape = IponShapes.SquircleLg
+                )
+            }
+            is PendingRestore.TooNew -> {
+                AlertDialog(
+                    onDismissRequest = { viewModel.cancelPendingRestore() },
+                    title = { Text("Backup is from a newer Ipon", color = KapeBrown, fontWeight = FontWeight.Bold) },
+                    text = {
+                        Text(
+                            text = "This backup file (format v${pending.fileSchemaVersion}) was made by a " +
+                                "newer version of Ipon than this one. Update the app before restoring it.",
+                            color = KapeBrownSoft
+                        )
+                    },
+                    confirmButton = {
+                        Button(
+                            onClick = { viewModel.cancelPendingRestore() },
+                            colors = ButtonDefaults.buttonColors(containerColor = OceanTeal),
+                            shape = IponShapes.SquircleSm
+                        ) {
+                            Text("OK", color = Color.White)
+                        }
+                    },
+                    containerColor = RicePaper,
+                    shape = IponShapes.SquircleLg
+                )
+            }
+            PendingRestore.InvalidFile, PendingRestore.UnreadableFile -> {
+                AlertDialog(
+                    onDismissRequest = { viewModel.cancelPendingRestore() },
+                    title = { Text("Couldn't read that file", color = KapeBrown, fontWeight = FontWeight.Bold) },
+                    text = {
+                        Text(
+                            text = if (pending is PendingRestore.InvalidFile) {
+                                "This doesn't look like an Ipon backup file. Make sure you're selecting a .json file created by Ipon's \"Back up my data\" button."
+                            } else {
+                                "Something went wrong opening that file."
+                            },
+                            color = KapeBrownSoft
+                        )
+                    },
+                    confirmButton = {
+                        Button(
+                            onClick = { viewModel.cancelPendingRestore() },
+                            colors = ButtonDefaults.buttonColors(containerColor = OceanTeal),
+                            shape = IponShapes.SquircleSm
+                        ) {
+                            Text("OK", color = Color.White)
+                        }
+                    },
+                    containerColor = RicePaper,
+                    shape = IponShapes.SquircleLg
+                )
+            }
+        }
+    }
+
+    restoreResult?.let { result ->
+        AlertDialog(
+            onDismissRequest = { viewModel.clearRestoreResult() },
+            title = {
+                Text(
+                    text = when (result) {
+                        is RestoreResult.Success -> "Restored"
+                        RestoreResult.Failed -> "Restore failed"
+                    },
+                    color = KapeBrown,
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Text(
+                    text = when (result) {
+                        is RestoreResult.Success -> "Brought back ${result.summary.totalRows} records: " +
+                            "${result.summary.transactionCount} transactions, ${result.summary.goalCount} goals, " +
+                            "${result.summary.envelopeCount} envelopes, ${result.summary.debtCount} debts, and more."
+                        RestoreResult.Failed -> "Something went wrong while restoring. Your existing data was not changed."
+                    },
+                    color = KapeBrownSoft
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = { viewModel.clearRestoreResult() },
                     colors = ButtonDefaults.buttonColors(containerColor = OceanTeal),
                     shape = IponShapes.SquircleSm
                 ) {

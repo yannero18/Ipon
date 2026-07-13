@@ -39,7 +39,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.ipon.app.data.local.TransactionType
 import com.ipon.app.di.IponViewModelFactory
 import com.ipon.app.ui.theme.HairlineBorder
 import com.ipon.app.ui.theme.IponShapes
@@ -176,7 +175,7 @@ private fun CalendarDayCell(
     modifier: Modifier = Modifier
 ) {
     val netMinorForDay = remember(day) {
-        day.events.sumOf { if (it.template.type == TransactionType.INCOME) it.template.amount.minorUnits else -it.template.amount.minorUnits }
+        day.events.sumOf { if (it.isIncome) it.amount.minorUnits else -it.amount.minorUnits }
     }
 
     Box(
@@ -276,16 +275,15 @@ private fun SelectedDayDetail(day: CalendarDay) {
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
-                        text = event.template.label,
+                        text = event.label,
                         style = MaterialTheme.typography.bodyMedium,
                         color = KapeBrown
                     )
-                    val isIncome = event.template.type == TransactionType.INCOME
                     Text(
-                        text = (if (isIncome) "+" else "-") + event.template.amount.formatPhp(),
+                        text = (if (event.isIncome) "+" else "-") + event.amount.formatPhp(),
                         style = MaterialTheme.typography.bodyMedium.merge(TabularNumberStyle),
                         fontWeight = FontWeight.Bold,
-                        color = if (isIncome) OceanTeal else Terracotta
+                        color = if (event.isIncome) OceanTeal else Terracotta
                     )
                 }
             }

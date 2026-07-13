@@ -5,6 +5,7 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 
@@ -24,6 +25,22 @@ interface GoalDao {
 
     @Delete
     suspend fun delete(goal: GoalEntity)
+
+    @Query("DELETE FROM goal_contributions WHERE goalId = :goalId")
+    suspend fun deleteContributionsForGoal(goalId: String)
+
+    /**
+     * Deletes a goal AND its contribution history together, atomically.
+     * Plain [delete] alone left contributions orphaned forever -- no
+     * foreign key was ever declared on goal_contributions, so SQLite had
+     * no way to know to clean them up on its own. See MIGRATION_13_14 for
+     * the one-time cleanup of orphans this bug already produced.
+     */
+    @Transaction
+    suspend fun deleteGoalAndContributions(goal: GoalEntity) {
+        deleteContributionsForGoal(goal.id)
+        delete(goal)
+    }
 
     @Query("SELECT * FROM goals WHERE isArchived = 0 ORDER BY createdAtEpochMillis ASC")
     fun observeActive(): Flow<List<GoalEntity>>

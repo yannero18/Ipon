@@ -42,9 +42,15 @@ class DebtsViewModel(private val repository: DebtRepository) : ViewModel() {
         selectedMethod.value = method
     }
 
-    fun createDebt(label: String, originalBalance: Money, interestRatePercent: Double?) {
+    fun createDebt(label: String, originalBalance: Money, interestRatePercent: Double?, fee: Money, dueDate: String?) {
         viewModelScope.launch {
-            repository.createDebt(label, originalBalance, interestRatePercent)
+            repository.createDebt(label, originalBalance, interestRatePercent, fee, dueDate)
+        }
+    }
+
+    fun updateDebt(debt: Debt) {
+        viewModelScope.launch {
+            repository.updateDebt(debt)
         }
     }
 

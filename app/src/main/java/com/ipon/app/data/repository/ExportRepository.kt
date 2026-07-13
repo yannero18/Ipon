@@ -92,12 +92,13 @@ class ExportRepository(
 
         // 4. GOALS
         builder.appendLine("## GOALS")
-        builder.appendLine("id,label,target,emoji,deadline,archived")
+        builder.appendLine("id,label,target,emoji,deadline,archived,image_uri")
         database.goalDao().getAllGoalsEver().forEach { goal ->
             builder.appendLine(
                 listOf(
                     goal.id, csvEscape(goal.label), (goal.targetMinorUnits / 100.0).toString(), 
-                    goal.emoji, csvEscape(goal.deadline.orEmpty()), goal.isArchived.toString()
+                    goal.emoji, csvEscape(goal.deadline.orEmpty()), goal.isArchived.toString(),
+                    csvEscape(goal.imageUri.orEmpty())
                 ).joinToString(",")
             )
         }
@@ -118,12 +119,13 @@ class ExportRepository(
 
         // 6. DEBTS
         builder.appendLine("## DEBTS")
-        builder.appendLine("id,label,original_balance,interest_rate,archived")
+        builder.appendLine("id,label,original_balance,interest_rate,archived,fee,due_date")
         database.debtDao().getAllDebtsEver().forEach { debt ->
             builder.appendLine(
                 listOf(
                     debt.id, csvEscape(debt.label), (debt.originalBalanceMinorUnits / 100.0).toString(), 
-                    debt.interestRatePercent?.toString() ?: "", debt.isArchived.toString()
+                    debt.interestRatePercent?.toString() ?: "", debt.isArchived.toString(),
+                    (debt.feeMinorUnits / 100.0).toString(), csvEscape(debt.dueDate.orEmpty())
                 ).joinToString(",")
             )
         }

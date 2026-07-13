@@ -4,7 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ipon.app.data.local.RecurrenceFrequency
 import com.ipon.app.data.local.TransactionType
+import com.ipon.app.data.model.Debt
+import com.ipon.app.data.model.DebtProgress
 import com.ipon.app.data.model.RecurringTemplate
+import com.ipon.app.data.repository.DebtRepository
 import com.ipon.app.data.repository.RecurringTemplateRepository
 import com.ipon.app.data.repository.TransactionRepository
 import com.ipon.app.util.Money
@@ -17,8 +20,30 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
 
-/** One recurring template landing on a specific calendar day. */
-data class CalendarDayEvent(val template: RecurringTemplate)
+/**
+ * One thing landing on a specific calendar day -- either a Recurring
+ * template occurrence, or a Debt's due date. Both expose the same
+ * label/amount/isIncome shape so the projection math and the day cell UI
+ * can treat them uniformly without caring which kind they are.
+ */
+sealed interface CalendarDayEvent {
+    val label: String
+    val amount: Money
+    val isIncome: Boolean
+
+    data class Recurring(val template: RecurringTemplate) : CalendarDayEvent {
+        override val label: String get() = template.label
+        override val amount: Money get() = template.amount
+        override val isIncome: Boolean get() = template.type == TransactionType.INCOME
+    }
+
+    /** [progress] carries the REMAINING balance, not the original -- a partly-paid-down debt shows what's actually still owed, same "derive, don't cache" principle as everywhere else. */
+    data class DebtDue(val progress: DebtProgress) : CalendarDayEvent {
+        override val label: String get() = "${progress.debt.label} due"
+        override val amount: Money get() = progress.remaining
+        override val isIncome: Boolean get() = false
+    }
+}
 
 data class CalendarDay(
     val dayOfMonth: Int,
@@ -65,6 +90,7 @@ private val BLANK_DAY = CalendarDay(
 class CalendarViewModel(
     transactionRepository: TransactionRepository,
     recurringTemplateRepository: RecurringTemplateRepository,
+    debtRepository: DebtRepository,
     private val onboardingPreferences: OnboardingPreferences
 ) : ViewModel() {
 
@@ -72,16 +98,25 @@ class CalendarViewModel(
 
     val uiState: StateFlow<CalendarUiState> = combine(
         recurringTemplateRepository.observeAll(),
+        debtRepository.observeProgress(),
         transactionRepository.observeSummaryBetween(monthRange.first, monthRange.second)
-    ) { templates, summary ->
-        buildUiState(templates.filter { !it.isPaused }, summary.net)
+    ) { templates, debtProgresses, summary ->
+        buildUiState(
+            templates.filter { !it.isPaused },
+            debtProgresses.filter { !it.debt.isArchived && !it.isPaidOff && it.debt.dueDate != null },
+            summary.net
+        )
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = CalendarUiState()
     )
 
-    private fun buildUiState(templates: List<RecurringTemplate>, startingBalance: Money): CalendarUiState {
+    private fun buildUiState(
+        templates: List<RecurringTemplate>,
+        dueDebts: List<DebtProgress>,
+        startingBalance: Money
+    ): CalendarUiState {
         val paydays = onboardingPreferences.getPaydays().toSet()
         val today = Calendar.getInstance()
         val todayDayOfMonth = today.get(Calendar.DAY_OF_MONTH)
@@ -99,15 +134,19 @@ class CalendarViewModel(
             val isPast = dayNum < todayDayOfMonth
             val isToday = dayNum == todayDayOfMonth
 
-            val eventsForDay = templates
+            val recurringEvents: List<CalendarDayEvent> = templates
                 .filter { isDueOnDay(it, cal, dayNum, lastDayOfMonth) }
-                .map { CalendarDayEvent(it) }
+                .map { CalendarDayEvent.Recurring(it) }
+            val debtEvents: List<CalendarDayEvent> = dueDebts
+                .filter { isDebtDueOnDay(it.debt, dayNum, lastDayOfMonth) }
+                .map { CalendarDayEvent.DebtDue(it) }
+            val eventsForDay = recurringEvents + debtEvents
 
             val projectedBalance: Money? = if (isPast) {
                 null
             } else {
                 val netMinorForDay = eventsForDay.sumOf {
-                    if (it.template.type == TransactionType.INCOME) it.template.amount.minorUnits else -it.template.amount.minorUnits
+                    if (it.isIncome) it.amount.minorUnits else -it.amount.minorUnits
                 }
                 runningBalance = Money.ofMinorUnits(runningBalance.minorUnits + netMinorForDay)
                 runningBalance
@@ -138,6 +177,25 @@ class CalendarViewModel(
             startingBalance = startingBalance,
             endOfMonthProjectedBalance = days.lastOrNull()?.projectedBalance ?: startingBalance
         )
+    }
+
+    /**
+     * Debt due dates are stored as ISO "yyyy-MM-dd" (see DebtsScreen.kt),
+     * always a single lump-sum deadline, not a recurring occurrence -- so
+     * this only ever matches once, unlike [isDueOnDay]'s repeating templates.
+     */
+    private fun isDebtDueOnDay(debt: Debt, dayNum: Int, lastDayOfMonth: Int): Boolean {
+        val dueDate = debt.dueDate ?: return false
+        val parts = dueDate.split("-")
+        if (parts.size != 3) return false
+        val dueYear = parts[0].toIntOrNull() ?: return false
+        val dueMonth = parts[1].toIntOrNull() ?: return false
+        val dueDay = parts[2].toIntOrNull() ?: return false
+
+        val cal = Calendar.getInstance()
+        val currentYear = cal.get(Calendar.YEAR)
+        val currentMonth = cal.get(Calendar.MONTH) + 1
+        return dueYear == currentYear && dueMonth == currentMonth && dueDay.coerceAtMost(lastDayOfMonth) == dayNum
     }
 
     /**

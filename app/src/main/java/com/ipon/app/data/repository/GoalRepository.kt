@@ -70,7 +70,7 @@ class GoalRepository(private val dao: GoalDao) {
     }
 
     suspend fun deleteGoal(goal: Goal) {
-        dao.delete(goal.toEntity())
+        dao.deleteGoalAndContributions(goal.toEntity())
     }
 
     suspend fun updateGoal(goal: Goal) {
